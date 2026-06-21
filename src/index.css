@@ -1,0 +1,240 @@
+/* ============================================================
+   Tailwind CSS v4 — Amul Paglu
+   ============================================================ */
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap');
+
+/* ── Light-mode design tokens ─────────────────────────────── */
+:root {
+  /* shadcn/ui base tokens */
+  --background:         0 0% 98%;          /* #FAFAF7-ish warm white */
+  --foreground:         0 0% 10%;          /* #1A1A1A */
+  --card:               0 0% 100%;
+  --card-foreground:    0 0% 10%;
+  --popover:            0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --primary:            349 78% 43%;       /* Amul red #C8102E */
+  --primary-foreground: 0 0% 100%;
+  --secondary:          47 100% 50%;       /* Amul gold #FFD700 */
+  --secondary-foreground: 0 0% 10%;
+  --muted:              0 0% 95%;
+  --muted-foreground:   0 0% 45%;
+  --accent:             47 100% 50%;
+  --accent-foreground:  0 0% 10%;
+  --destructive:        0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border:             0 0% 90%;
+  --input:              0 0% 90%;
+  --ring:               349 78% 43%;
+  --radius:             0.75rem;
+}
+
+/* ── Dark-mode design tokens ──────────────────────────────── */
+.dark {
+  /* Warm charcoal base — NOT pure black */
+  --background:         20 27% 9%;          /* #1C1410 warm charcoal */
+  --foreground:         0 0% 95%;
+  --card:               23 27% 13%;         /* #2A1F18 warm dark brown */
+  --card-foreground:    0 0% 95%;
+  --popover:            23 27% 13%;
+  --popover-foreground: 0 0% 95%;
+  --primary:            349 78% 53%;        /* slightly lighter red in dark */
+  --primary-foreground: 0 0% 100%;
+  --secondary:          47 100% 50%;        /* Amul gold — kept vivid in dark */
+  --secondary-foreground: 0 0% 10%;
+  --muted:              22 22% 18%;         /* warm dark muted */
+  --muted-foreground:   0 0% 60%;
+  --accent:             22 22% 18%;
+  --accent-foreground:  0 0% 95%;
+  --destructive:        0 62% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border:             22 20% 20%;         /* warm dark border */
+  --input:              22 20% 20%;
+  --ring:               349 78% 53%;
+}
+
+/* ── Base styles ──────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Cursor pointer on all interactive elements ──────────── */
+button, [role="button"], select, label[for], summary {
+  cursor: pointer;
+}
+
+/* ── Global button press feedback ────────────────────────── */
+button:not(:disabled) {
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+button:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+/* ── Search / input focus glow ───────────────────────────── */
+input[type="search"]:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  outline: none;
+  border-color: #C8102E !important;
+  box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.15);
+}
+
+/* ── Remove red accent from native inputs & selects ─────── */
+input, select, textarea {
+  accent-color: hsl(var(--foreground));
+}
+
+/* ── Scrollbar styling ────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* ── Utility classes ──────────────────────────────────────── */
+.page-transition {
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+/* ── Focus ring ───────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* ── Badge unlock progress bar animation ─────────────────── */
+@keyframes shrink-width {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+/* ── Slide-up toast animation ─────────────────────────────── */
+@keyframes slide-up {
+  from { transform: translateY(1rem); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}
+
+/* ── Infinite marquee ─────────────────────────────────────── */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.3333%); }
+}
+
+/* ── Gradient text (red → gold) ──────────────────────────── */
+.gradient-text {
+  background: linear-gradient(90deg, #C8102E 0%, #FFD700 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Background patterns ─────────────────────────────────── */
+/* Subtle dot-grid — for card/section use */
+.bg-dot-grid {
+  background-image: radial-gradient(circle, rgba(200, 16, 46, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+/* Diagonal butter-paper stripes — for hero/section backgrounds */
+.bg-stripe-pattern {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 6px,
+    rgba(200, 16, 46, 0.04) 6px,
+    rgba(200, 16, 46, 0.04) 12px
+  );
+}
+
+/* ── Rarity left-border colours ─────────────────────────── */
+.rarity-border-common    { border-left-color: #6B7280; }
+.rarity-border-uncommon  { border-left-color: #16A34A; }
+.rarity-border-rare      { border-left-color: #2563EB; }
+.rarity-border-epic      { border-left-color: #7C3AED; }
+.rarity-border-legendary { border-left-color: #D97706; }
+
+/* ── Rarity hover glows ──────────────────────────────────── */
+.rarity-glow-common:hover    { box-shadow: 0 0 16px 2px rgba(107,114,128,0.30); }
+.rarity-glow-uncommon:hover  { box-shadow: 0 0 16px 2px rgba(22,163,74,0.30);  }
+.rarity-glow-rare:hover      { box-shadow: 0 0 16px 2px rgba(37,99,235,0.30);  }
+.rarity-glow-epic:hover      { box-shadow: 0 0 16px 2px rgba(124,58,237,0.35); }
+.rarity-glow-legendary:hover { box-shadow: 0 0 16px 2px rgba(217,119,6,0.40);  }
+
+/* ── Badge holographic shine (earned only) ───────────────── */
+@keyframes shine {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.badge-shine {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255,255,255,0.25) 50%,
+    transparent 60%
+  ) no-repeat;
+  background-size: 200% auto;
+  animation: shine 3s linear infinite;
+}
+
+/* ── Dark mode gold glow ─────────────────────────────────── */
+.dark .amul-gold-glow {
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.45);
+}
+.dark .border-amul-gold\/30 {
+  border-color: rgba(255, 215, 0, 0.45);
+}
+
+/* ── Scroll-reveal fade-in-up ────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal {
+  opacity: 0;
+}
+.reveal.visible {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* ── Count-up numbers ────────────────────────────────────── */
+.stat-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
