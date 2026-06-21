@@ -4,12 +4,11 @@ import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/errors";
 import { LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useLocation, Navigate } from "react-router-dom";
 import { useToast, ToastContainer } from "@/components/ui/Toast";
 
 export function ForgotPassword() {
   const { session } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const from =
     (location.state as { from?: Location })?.from?.pathname ?? "/dashboard";

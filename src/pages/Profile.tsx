@@ -7,6 +7,7 @@ import { getTier } from '@/types'
 import type { Profile, Product, Badge } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import { BadgesSection, type EarnedBadgeInfo } from '@/components/badges/BadgesSection'
+import { ProductImage } from '@/components/products/ProductImage'
 
 interface TriedEntry {
   tried_at: string | null
@@ -215,11 +216,14 @@ export default function ProfilePage() {
                 key={i}
                 className="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3 shadow-card"
               >
-                {/* Image / emoji */}
+                {/* Image / fallback */}
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[hsl(var(--muted))]">
-                  {product?.image_url
-                    ? <img src={product.image_url} alt={displayName} className="h-full w-full object-cover" />
-                    : <span className="text-xl">🐄</span>}
+                  <ProductImage
+                    src={product?.image_url}
+                    name={product?.name ?? 'Unknown product'}
+                    className="h-full w-full object-cover"
+                    size="xs"
+                  />
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-[hsl(var(--foreground))]">{displayName}</p>

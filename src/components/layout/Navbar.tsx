@@ -49,9 +49,9 @@ export function Navbar() {
                 to={to}
                 className={({ isActive }) =>
                   cn(
-                    'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                    'relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-amul-red/10 text-amul-red'
+                      ? 'bg-amul-red/10 text-amul-red after:absolute after:bottom-0 after:inset-x-1.5 after:h-0.5 after:rounded-full after:bg-amul-red'
                       : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]'
                   )
                 }
@@ -64,9 +64,9 @@ export function Navbar() {
                 to="/admin"
                 className={({ isActive }) =>
                   cn(
-                    'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                    'relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-amul-red/10 text-amul-red'
+                      ? 'bg-amul-red/10 text-amul-red after:absolute after:bottom-0 after:inset-x-1.5 after:h-0.5 after:rounded-full after:bg-amul-red'
                       : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]'
                   )
                 }

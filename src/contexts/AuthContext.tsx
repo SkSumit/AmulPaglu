@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
-import { supabase, refreshSession } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import type { Profile } from '@/types'
 
 // ── Types ──────────────────────────────────────────────────
@@ -34,12 +34,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Track which user ID's profile is already loaded — prevents redundant re-fetches
   // on TOKEN_REFRESHED events (fires every ~55 min) from clearing the session
   const profileLoadedForRef = useRef<string | null>(null)
-  
-  // Track last refresh time to avoid excessive refresh calls
-  const lastRefreshRef = useRef<number>(0)
-  
-  // Periodic refresh timer
-  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   async function fetchOrCreateProfile(user: User): Promise<Profile | null> {
     // Try to fetch existing profile first

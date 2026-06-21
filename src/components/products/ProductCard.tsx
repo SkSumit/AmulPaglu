@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { CheckCircle2, Plus, BookmarkCheck, Trash2, Star } from 'lucide-react'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import type { Product, UserProductStatus } from '@/types'
+import { ProductImage } from './ProductImage'
 
-// â”€â”€ Rarity maps â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Rarity maps ──────────────────────────────────────
 const RARITY_PILL: Record<string, string> = {
   Common: 'bg-gray-100   text-gray-600   dark:bg-gray-800   dark:text-gray-400',
   Uncommon: 'bg-green-100  text-green-700  dark:bg-green-900/40  dark:text-green-400',
@@ -21,14 +22,7 @@ const RARITY_PILL: Record<string, string> = {
 //   Legendary: { border: 'rarity-border-legendary', glow: 'rarity-glow-legendary' },
 // }
 
-const AVAIL_PILL: Record<string, string> = {
-  'Pan India': 'bg-sky-50    text-sky-600    dark:bg-sky-950/30    dark:text-sky-400',
-  'Regional': 'bg-orange-50 text-orange-600 dark:bg-orange-950/30 dark:text-orange-400',
-  'Seasonal': 'bg-teal-50   text-teal-600   dark:bg-teal-950/30   dark:text-teal-400',
-  'Discontinued': 'bg-red-50    text-red-500    dark:bg-red-950/30    dark:text-red-400',
-}
-
-// â”€â”€ Props â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Props ──────────────────────────────────────────
 export interface ProductCardProps {
   product: Product
   userStatus: UserProductStatus | null
@@ -53,28 +47,18 @@ export function ProductCard({
 }: ProductCardProps) {
   const pts = product.points ?? 0
   const rarity = product.rarity_label
-  const avail = product.availability
   const productName = getDisplayProductName(product.name)
   // const rarityClass  = rarity ? (RARITY_CLASSES[rarity] ?? RARITY_CLASSES.Common) : null
   const isTried = userStatus === 'tried'
 
   // Scale-pop state for "Add to List" click
   const [justAdded, setJustAdded] = useState(false)
-  const [imgError, setImgError] = useState(false)
 
   function handleAdd() {
     setJustAdded(true)
     setTimeout(() => setJustAdded(false), 300)
     onAddToList()
   }
-
-  // Initials for placeholder
-  const initials = productName
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
 
   return (
     <div
@@ -88,7 +72,10 @@ export function ProductCard({
         // Tried state border override
         isTried && 'border-green-400 dark:border-green-700',
         // Scale pop on add
-        justAdded && 'scale-[1.05]'
+        justAdded && 'scale-[1.05]',
+        // Holographic shine for rare products
+        rarity === 'Legendary' && 'card-shine-legendary',
+        rarity === 'Epic' && 'card-shine-epic',
       )}
     >
       {/* Status ribbon */}
@@ -105,27 +92,13 @@ export function ProductCard({
 
       {/* Image */}
       <div className="relative h-40 w-full shrink-0 overflow-hidden flex items-center justify-center">
-        {product.image_url && !imgError ? (
-          <>
-            <img
-              src={product.image_url}
-              alt={productName}
-              onError={() => setImgError(true)}
-              className={cn(
-                'h-full w-full object-contain transition-transform group-hover:scale-105',
-                isTried && 'saturate-[0.6]'
-              )}
-            />
-          </>
-        ) : (
-          /* Amul-red gradient placeholder with initials */
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amul-red to-amul-red-dark">
-            <span className="text-4xl font-black text-white/90 select-none">{initials}</span>
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-white/25 pointer-events-none select-none tracking-widest mt-14">
-              AMUL PAGLU
-            </span>
-          </div>
-        )}
+        <ProductImage
+          src={product.image_url}
+          name={product.name}
+          className="h-full w-full object-contain transition-all duration-300 group-hover:scale-105 group-hover:brightness-[1.05]"
+          size="md"
+          isTried={isTried}
+        />
       </div>
 
       {/* Body */}

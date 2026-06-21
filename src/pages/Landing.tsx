@@ -16,6 +16,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDisplayProductName } from "@/lib/utils";
+import { ProductImage } from "@/components/products/ProductImage";
 import { TIERS, getTier } from "@/types";
 
 const RARITY_PILL: Record<string, string> = {
@@ -137,6 +138,24 @@ export default function Landing() {
     void fetchLive();
   }, []);
 
+  // Scroll-reveal observer
+  useEffect(() => {
+    const els = document.querySelectorAll('.reveal')
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -50px 0px' }
+    )
+    els.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [lbLoading])
+
   // Redirect logged-in users to dashboard
   if (!isLoading && session) return <Navigate to="/dashboard" replace />;
 
@@ -205,7 +224,7 @@ export default function Landing() {
                 <strong className="text-[hsl(var(--foreground))]">
                   {userCount}
                 </strong>{" "}
-                Amul fanatics already tracking their obsession · Free forever
+                Amul {userCount === 1 ? 'fanatic' : 'fanatics'} already tracking their obsession · Free forever
               </>
             ) : (
               <>Inspired by r/AmulPagalHoChukaHai · Free forever</>
@@ -237,15 +256,12 @@ export default function Landing() {
                   className="w-44 shrink-0 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-card"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-[hsl(var(--muted))]">
-                    {p.image_url ? (
-                      <img
-                        src={p.image_url}
-                        alt={p.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-2xl">🐄</span>
-                    )}
+                    <ProductImage
+                      src={p.image_url}
+                      name={p.name}
+                      className="h-full w-full object-cover"
+                      size="xs"
+                    />
                   </div>
                   <p className="mb-1 text-xs font-semibold leading-snug text-[hsl(var(--foreground))] line-clamp-2">
                     {getDisplayProductName(p.name)}
@@ -259,8 +275,14 @@ export default function Landing() {
                     >
                       {p.rarity_label}
                     </span>
-                    <span className="flex items-center gap-0.5 text-[10px] font-bold text-amul-gold">
-                      {"⭐".repeat(p.points ?? 1)}
+                    <span className="flex items-center gap-0.5">
+                      {Array.from({ length: 5 }).map((_, j) => (
+                        <Star
+                          key={j}
+                          size={9}
+                          className={j < (p.points ?? 1) ? 'text-amul-gold fill-amul-gold' : 'text-gray-300 dark:text-gray-600 fill-none'}
+                        />
+                      ))}
                     </span>
                   </div>
                 </div>
@@ -272,7 +294,7 @@ export default function Landing() {
 
       {/* ── Stats bar ───────────────────────────────────────── */}
       <section className="border-y border-[hsl(var(--border))] bg-[hsl(var(--card))] py-8">
-        <div className="mx-auto grid max-w-4xl grid-cols-3 gap-6 px-4 text-center sm:grid-cols-3">
+        <div className="reveal mx-auto grid max-w-4xl grid-cols-3 gap-6 px-4 text-center sm:grid-cols-3">
           {[
             {
               value: productCount ?? 0,
@@ -310,7 +332,7 @@ export default function Landing() {
       {/* ── Live Leaderboard ────────────────────────────────── */}
       <section className="px-4 py-16 bg-[hsl(var(--background))]">
         <div className="mx-auto max-w-3xl">
-          <div className="mb-8 text-center">
+          <div className="reveal mb-8 text-center">
             <span className="mb-3 inline-block rounded-full border border-amul-gold/30 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
               🏆 Live rankings
             </span>
@@ -401,7 +423,7 @@ export default function Landing() {
       {/* ── Features grid ───────────────────────────────────── */}
       <section className="px-4 py-20">
         <div className="mx-auto max-w-5xl">
-          <div className="mb-12 text-center">
+          <div className="reveal mb-12 text-center">
             <h2 className="font-display text-2xl font-bold sm:text-3xl">
               Everything you need to become an
               <span className="text-amul-red"> Amul Legend</span>
@@ -415,7 +437,8 @@ export default function Landing() {
             {FEATURES.map(({ icon: Icon, title, desc }, idx) => (
               <div
                 key={title}
-                className={`group rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-card transition-all duration-200 hover:shadow-card-lg`}
+                className="reveal group rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-card transition-all duration-200 hover:shadow-card-lg"
+                style={{ animationDelay: `${idx * 80}ms` }}
               >
                 <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amul-red/10 text-amul-red transition-colors group-hover:bg-amul-red group-hover:text-white">
                   <Icon size={20} />
@@ -435,7 +458,7 @@ export default function Landing() {
       {/* ── Tiers showcase ──────────────────────────────────── */}
       <section className="bg-[hsl(var(--card))] px-4 py-20">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-10 text-center">
+          <div className="reveal mb-10 text-center">
             <h2 className="font-display text-2xl font-bold sm:text-3xl">
               Your journey, ranked
             </h2>
@@ -455,7 +478,8 @@ export default function Landing() {
               return (
                 <div
                   key={tier.label}
-                  className="flex items-center gap-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 py-3"
+                  className="reveal flex items-center gap-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 py-3"
+                  style={{ animationDelay: `${i * 60}ms` }}
                 >
                   <span className="text-2xl">{tier.emoji}</span>
                   <div className="flex-1">
@@ -487,7 +511,7 @@ export default function Landing() {
       {/* ── Badge Showcase ──────────────────────────────────── */}
       <section className="px-4 py-20">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-10 text-center">
+          <div className="reveal mb-10 text-center">
             <span className="mb-3 inline-block rounded-full border border-amber-300/40 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
               🏅 Achievements
             </span>
@@ -501,12 +525,13 @@ export default function Landing() {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {BADGE_SHOWCASE.map((b) => (
+            {BADGE_SHOWCASE.map((b, i) => (
               <div
                 key={b.name}
-                className="flex items-start gap-3 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-card"
+                className="reveal group/badge flex items-start gap-3 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-card transition-all duration-200 hover:shadow-card-lg hover:-translate-y-0.5 hover:border-amul-red/20"
+                style={{ animationDelay: `${i * 60}ms` }}
               >
-                <span className="text-3xl leading-none">{b.icon}</span>
+                <span className="text-3xl leading-none transition-transform duration-200 group-hover/badge:scale-110">{b.icon}</span>
                 <div className="min-w-0">
                   <p className="font-semibold text-sm text-[hsl(var(--foreground))]">
                     {b.name}
@@ -527,7 +552,7 @@ export default function Landing() {
       {/* ── How it works ────────────────────────────────────── */}
       <section className="px-4 py-20">
         <div className="mx-auto max-w-3xl">
-          <h2 className="mb-10 text-center font-display text-2xl font-bold sm:text-3xl">
+          <h2 className="reveal mb-10 text-center font-display text-2xl font-bold sm:text-3xl">
             How it works
           </h2>
           <div className="grid gap-8 sm:grid-cols-3">
@@ -547,8 +572,8 @@ export default function Landing() {
                 title: "Try & earn points",
                 desc: "Mark products as tried. Earn points. Climb the leaderboard.",
               },
-            ].map(({ step, title, desc }) => (
-              <div key={step} className="text-center">
+            ].map(({ step, title, desc }, i) => (
+              <div key={step} className="reveal text-center" style={{ animationDelay: `${i * 100}ms` }}>
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amul-red/10 font-display text-lg font-bold text-amul-red">
                   {step}
                 </div>
@@ -566,7 +591,7 @@ export default function Landing() {
 
       {/* ── Final CTA ───────────────────────────────────────── */}
       <section className="px-4 py-20">
-        <div className="mx-auto max-w-2xl rounded-3xl bg-amul-red px-8 py-14 text-center shadow-amul">
+        <div className="reveal mx-auto max-w-2xl rounded-3xl bg-amul-red px-8 py-14 text-center shadow-amul">
           <p className="mb-2 text-sm font-medium text-white/70">
             Ready to find out?
           </p>

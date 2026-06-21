@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type JSX } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { supabase } from "@/lib/supabase";

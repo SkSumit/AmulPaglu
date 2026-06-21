@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useToast, ToastContainer } from '@/components/ui/Toast'
 import type { Product } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
+import { ProductImage } from '@/components/products/ProductImage'
 
 const RARITIES     = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary']
 const AVAILABILITIES = ['Pan India', 'Regional', 'Seasonal', 'Discontinued']
@@ -383,7 +384,12 @@ export default function AdminProducts() {
                 />
                 {/* Image */}
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[hsl(var(--muted))]">
-                  {p.image_url ? <img src={p.image_url} alt={getDisplayProductName(p.name)} className="h-full w-full object-contain" /> : <span className="text-lg">🐄</span>}
+                  <ProductImage
+                    src={p.image_url}
+                    name={p.name}
+                    className="h-full w-full object-contain"
+                    size="xs"
+                  />
                 </div>
                 {/* Info */}
                 <div className="min-w-0 flex-1">

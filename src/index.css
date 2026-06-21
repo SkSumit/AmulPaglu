@@ -1,11 +1,12 @@
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap');
+
 /* ============================================================
    Tailwind CSS v4 — Amul Paglu
    ============================================================ */
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-/* Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap');
 
 /* ── Light-mode design tokens ─────────────────────────────── */
 :root {
@@ -237,4 +238,45 @@ input, select, textarea {
 .stat-number {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
+}
+
+/* ── Card holographic shine for rare products ────────────── */
+.card-shine-epic::after,
+.card-shine-legendary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.card-shine-epic:hover::after,
+.card-shine-legendary:hover::after {
+  opacity: 1;
+}
+.card-shine-epic::after {
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(124, 58, 237, 0.06) 45%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(124, 58, 237, 0.06) 55%,
+    transparent 65%
+  ) no-repeat;
+  background-size: 200% auto;
+  animation: shine 3.5s linear infinite;
+}
+.card-shine-legendary::after {
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 215, 0, 0.08) 45%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 215, 0, 0.08) 55%,
+    transparent 65%
+  ) no-repeat;
+  background-size: 200% auto;
+  animation: shine 3s linear infinite;
 }

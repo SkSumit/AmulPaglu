@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useToast, ToastContainer } from '@/components/ui/Toast'
 import type { Suggestion } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
+import { ProductImage } from '@/components/products/ProductImage'
 
 type Tab = 'pending' | 'approved' | 'rejected'
 
@@ -163,9 +164,14 @@ export default function AdminSuggestions() {
                           <ExternalLink size={11} /> Source
                         </a>
                       )}
-                      {s.image_url && (
-                        <img src={s.image_url} alt={displayName} className="h-24 w-24 rounded-xl object-cover border border-[hsl(var(--border))]" />
-                      )}
+                      <div className="h-24 w-24 rounded-xl overflow-hidden border border-[hsl(var(--border))]">
+                        <ProductImage
+                          src={s.image_url}
+                          name={s.name}
+                          className="h-full w-full object-cover"
+                          size="sm"
+                        />
+                      </div>
                       {s.admin_note && (
                         <p className="text-xs italic text-[hsl(var(--muted-foreground))]">Note: {s.admin_note}</p>
                       )}

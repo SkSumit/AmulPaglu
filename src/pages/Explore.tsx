@@ -448,7 +448,16 @@ export default function Explore() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <span className="text-5xl">🔍</span>
+          <div className="relative mb-2">
+            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-amul-red/10 to-amber-100/50 dark:to-amber-900/20">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-amul-red/15 to-amber-200/50 dark:to-amber-900/30">
+                <Search size={32} className="text-amul-red/50" />
+              </div>
+            </div>
+            <div className="absolute -right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-[hsl(var(--muted))] text-xs font-bold text-[hsl(var(--muted-foreground))]">
+              ?
+            </div>
+          </div>
           <p className="mt-4 text-base font-semibold text-[hsl(var(--foreground))]">
             No products found
           </p>

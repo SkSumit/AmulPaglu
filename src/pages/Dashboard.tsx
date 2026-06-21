@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getTier, TIERS } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import { BadgesSection, type EarnedBadgeInfo } from '@/components/badges/BadgesSection'
+import { ProductImage } from '@/components/products/ProductImage'
 import type { Badge } from '@/types'
 
 // ── Types ──────────────────────────────────────────────────
@@ -373,9 +374,21 @@ export default function Dashboard() {
             </div>
           ) : activity.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <span className="text-4xl">🥛</span>
-              <p className="mt-3 text-sm font-medium text-[hsl(var(--foreground))]">No tries yet!</p>
-              <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+              <div className="relative mb-2">
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-amul-red/10 to-amul-gold/10">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amul-red/15 to-amul-gold/15">
+                    <span className="text-4xl">🥛</span>
+                  </div>
+                </div>
+                <div className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-amul-gold/20 text-sm animate-bounce">
+                  ✨
+                </div>
+                <div className="absolute -bottom-1 -left-2 flex h-5 w-5 items-center justify-center rounded-full bg-amul-red/15 text-[10px]">
+                  🧀
+                </div>
+              </div>
+              <p className="mt-3 text-sm font-semibold text-[hsl(var(--foreground))]">No tries yet!</p>
+              <p className="mt-1 max-w-[220px] text-xs text-[hsl(var(--muted-foreground))]">
                 Head to Explore and mark your first product as tried.
               </p>
               <Link
@@ -394,9 +407,12 @@ export default function Dashboard() {
                   <li key={item.id} className="flex items-center gap-3">
                     {/* Image / placeholder */}
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[hsl(var(--muted))] text-lg overflow-hidden">
-                      {p?.image_url ? (
-                        <img src={p.image_url} alt={displayName} className="h-full w-full object-cover" />
-                      ) : '🐄'}
+                      <ProductImage
+                        src={p?.image_url}
+                        name={p?.name ?? 'Unknown product'}
+                        className="h-full w-full object-cover"
+                        size="xs"
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-[hsl(var(--foreground))]">

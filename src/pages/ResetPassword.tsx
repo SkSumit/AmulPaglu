@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase"; // adjust path
-import { Link, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 export default function ResetPassword() {
@@ -45,8 +45,8 @@ export default function ResetPassword() {
       }
       navigate('/login')
     }
-    catch (error) {
-      setError(error.message);
+    catch (err) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
       setLoading(false);
     }
   };
