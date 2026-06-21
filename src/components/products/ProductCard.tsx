@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { CheckCircle2, Plus, BookmarkCheck, Trash2, Star } from 'lucide-react'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import type { Product, UserProductStatus } from '@/types'
@@ -60,6 +60,7 @@ export function ProductCard({
 
   // Scale-pop state for "Add to List" click
   const [justAdded, setJustAdded] = useState(false)
+  const [imgError, setImgError] = useState(false)
 
   function handleAdd() {
     setJustAdded(true)
@@ -104,11 +105,12 @@ export function ProductCard({
 
       {/* Image */}
       <div className="relative h-40 w-full shrink-0 overflow-hidden flex items-center justify-center">
-        {product.image_url ? (
+        {product.image_url && !imgError ? (
           <>
             <img
               src={product.image_url}
               alt={productName}
+              onError={() => setImgError(true)}
               className={cn(
                 'h-full w-full object-contain transition-transform group-hover:scale-105',
                 isTried && 'saturate-[0.6]'
