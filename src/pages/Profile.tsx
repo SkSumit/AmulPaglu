@@ -8,6 +8,7 @@ import type { Profile, Product, Badge } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import { BadgesSection, type EarnedBadgeInfo } from '@/components/badges/BadgesSection'
 import { ProductImage } from '@/components/products/ProductImage'
+import logo from '@/assets/logo.png'
 
 interface TriedEntry {
   tried_at: string | null
@@ -15,10 +16,10 @@ interface TriedEntry {
 }
 
 const RARITY_PILL: Record<string, string> = {
-  Common:    'bg-gray-100   text-gray-600   dark:bg-gray-800 dark:text-gray-400',
-  Uncommon:  'bg-green-100  text-green-700  dark:bg-green-900/40 dark:text-green-400',
-  Rare:      'bg-blue-100   text-blue-700   dark:bg-blue-900/40 dark:text-blue-400',
-  Epic:      'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
+  Common: 'bg-gray-100   text-gray-600   dark:bg-gray-800 dark:text-gray-400',
+  Uncommon: 'bg-green-100  text-green-700  dark:bg-green-900/40 dark:text-green-400',
+  Rare: 'bg-blue-100   text-blue-700   dark:bg-blue-900/40 dark:text-blue-400',
+  Epic: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
   Legendary: 'bg-amber-100  text-amber-700  dark:bg-amber-900/40 dark:text-amber-400',
 }
 
@@ -30,13 +31,13 @@ export default function ProfilePage() {
   const { username } = useParams<{ username: string }>()
   const { user, isLoading: authLoading } = useAuth()
 
-  const [profile,  setProfile]  = useState<Profile | null>(null)
-  const [tried,    setTried]    = useState<TriedEntry[]>([])
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [tried, setTried] = useState<TriedEntry[]>([])
   const [wantCount, setWantCount] = useState(0)
-  const [rank,     setRank]     = useState<number | null>(null)
-  const [loading,  setLoading]  = useState(true)
+  const [rank, setRank] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const [allBadges, setAllBadges]       = useState<Badge[]>([])
+  const [allBadges, setAllBadges] = useState<Badge[]>([])
   const [earnedBadges, setEarnedBadges] = useState<EarnedBadgeInfo[]>([])
   const [badgesLoading, setBadgesLoading] = useState(true)
 
@@ -113,7 +114,7 @@ export default function ProfilePage() {
   if (!loading && notFound) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
-        <span className="text-5xl">🐄</span>
+        <img src={logo} alt="Amul Paglu Logo" className="h-20 w-20 object-contain animate-bounce" />
         <p className="font-semibold text-[hsl(var(--foreground))]">User not found</p>
         <p className="text-sm text-[hsl(var(--muted-foreground))]">No one goes by &ldquo;{username}&rdquo; here.</p>
         <Link to="/leaderboard" className="mt-2 rounded-xl bg-amul-red px-4 py-2 text-sm font-semibold text-white hover:bg-amul-red-dark">
@@ -123,8 +124,8 @@ export default function ProfilePage() {
     )
   }
 
-  const tier      = getTier(profile?.total_points ?? 0)
-  const pts       = profile?.total_points ?? 0
+  const tier = getTier(profile?.total_points ?? 0)
+  const pts = profile?.total_points ?? 0
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 page-transition">
@@ -168,9 +169,9 @@ export default function ProfilePage() {
         {/* Stats row */}
         <div className="flex gap-6 text-center">
           {[
-            { label: 'Points',     value: loading ? '…' : pts.toString(),           icon: '⭐' },
-            { label: 'Tried',      value: loading ? '…' : tried.length.toString(),  icon: '✅' },
-            { label: 'Want to try', value: loading ? '…' : wantCount.toString(),    icon: '📌' },
+            { label: 'Points', value: loading ? '…' : pts.toString(), icon: '⭐' },
+            { label: 'Tried', value: loading ? '…' : tried.length.toString(), icon: '✅' },
+            { label: 'Want to try', value: loading ? '…' : wantCount.toString(), icon: '📌' },
           ].map(({ label, value, icon }) => (
             <div key={label}>
               <p className="font-display text-xl font-bold text-[hsl(var(--foreground))]">
@@ -203,7 +204,7 @@ export default function ProfilePage() {
           </p>
           {isOwnProfile && (
             <Link to="/explore" className="mt-3 rounded-xl bg-amul-red px-4 py-1.5 text-xs font-semibold text-white hover:bg-amul-red-dark">
-              Start exploring
+              Start Pagluing
             </Link>
           )}
         </div>

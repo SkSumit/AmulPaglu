@@ -17,7 +17,6 @@ type SortBy  = 'newest' | 'points_desc' | 'name_asc'
 type StatusFilter = 'all' | 'not_added' | 'want_to_try' | 'tried'
 
 const RARITIES     = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary']
-const AVAILABILITIES = ['Pan India', 'Regional', 'Seasonal', 'Discontinued']
 const PAGE_SIZE = 24
 
 // ── Component ──────────────────────────────────────────────
@@ -38,7 +37,6 @@ export default function Explore() {
   const [search,              setSearch]              = useState('')
   const [filterCategory,      setFilterCategory]      = useState('')
   const [filterRarity,        setFilterRarity]        = useState('')
-  const [filterAvailability,  setFilterAvailability]  = useState('')
   const [filterStatus,        setFilterStatus]        = useState<StatusFilter>('all')
   const [sortBy,              setSortBy]              = useState<SortBy>('newest')
   const [filtersOpen,         setFiltersOpen]         = useState(false)
@@ -114,7 +112,6 @@ export default function Explore() {
     }
     if (filterCategory)     list = list.filter((p) => p.category     === filterCategory)
     if (filterRarity)       list = list.filter((p) => p.rarity_label === filterRarity)
-    if (filterAvailability) list = list.filter((p) => p.availability === filterAvailability)
     if (filterStatus !== 'all') {
       list = list.filter((p) => {
         const up = userProductMap[p.id]
@@ -128,17 +125,16 @@ export default function Explore() {
     else if (sortBy === 'name_asc') list.sort((a, b) => getDisplayProductName(a.name).localeCompare(getDisplayProductName(b.name)))
 
     return list
-  }, [products, userProductMap, search, filterCategory, filterRarity, filterAvailability, filterStatus, sortBy])
+  }, [products, userProductMap, search, filterCategory, filterRarity, filterStatus, sortBy])
 
   const displayed = filtered.slice(0, displayCount)
-  const activeFilterCount = [filterCategory, filterRarity, filterAvailability]
+  const activeFilterCount = [filterCategory, filterRarity]
     .filter(Boolean).length + (filterStatus !== 'all' ? 1 : 0)
 
   function clearFilters() {
     setSearch('')
     setFilterCategory('')
     setFilterRarity('')
-    setFilterAvailability('')
     setFilterStatus('all')
     setSortBy('newest')
   }
@@ -362,12 +358,6 @@ export default function Explore() {
               value={filterRarity}
               onChange={(v) => { setFilterRarity(v); setDisplayCount(PAGE_SIZE) }}
               options={RARITIES}
-            />
-            <SelectFilter
-              label="Availability"
-              value={filterAvailability}
-              onChange={(v) => { setFilterAvailability(v); setDisplayCount(PAGE_SIZE) }}
-              options={AVAILABILITIES}
             />
             <SelectFilter
               label="Sort by"

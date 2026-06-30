@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { getTier } from '@/types'
 import { cn } from '@/lib/utils'
+import logo from '@/assets/logo.png'
 
 const NAV_LINKS = [
   { to: '/explore',     label: 'Explore'     },
@@ -36,7 +37,7 @@ export function Navbar() {
           to={user ? '/dashboard' : '/'}
           className="flex items-center gap-2 font-display font-bold text-amul-red text-xl"
         >
-          <span className="text-2xl">🐄</span>
+          <img src={logo} alt="Amul Paglu Logo" className="h-8 w-8 object-contain" />
           <span className="hidden sm:inline">Amul Paglu</span>
         </Link>
 

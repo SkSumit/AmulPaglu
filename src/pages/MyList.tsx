@@ -22,7 +22,6 @@ type SortBy = 'newest' | 'points_desc' | 'name_asc' | 'tried_asc'
 type Tab    = 'want_to_try' | 'tried'
 
 const RARITIES      = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary']
-const AVAILABILITIES = ['Pan India', 'Regional', 'Seasonal', 'Discontinued']
 
 // ── Component ──────────────────────────────────────────────
 export default function MyList() {
@@ -40,7 +39,6 @@ export default function MyList() {
   const [search,             setSearch]             = useState('')
   const [filterCategory,     setFilterCategory]     = useState('')
   const [filterRarity,       setFilterRarity]       = useState('')
-  const [filterAvailability, setFilterAvailability] = useState('')
   const [sortBy,             setSortBy]             = useState<SortBy>('newest')
 
   // ── Load ──────────────────────────────────────────────
@@ -118,7 +116,6 @@ export default function MyList() {
     }
     if (filterCategory)     list = list.filter((e) => e.product.category     === filterCategory)
     if (filterRarity)       list = list.filter((e) => e.product.rarity_label === filterRarity)
-    if (filterAvailability) list = list.filter((e) => e.product.availability === filterAvailability)
 
     if (sortBy === 'points_desc') list = [...list].sort((a, b) => (b.product.points ?? 0) - (a.product.points ?? 0))
     else if (sortBy === 'name_asc') list = [...list].sort((a, b) => getDisplayProductName(a.product.name).localeCompare(getDisplayProductName(b.product.name)))
@@ -128,7 +125,7 @@ export default function MyList() {
       )
     }
     return list
-  }, [entries, tab, search, filterCategory, filterRarity, filterAvailability, sortBy, triedEntries, wantEntries])
+  }, [entries, tab, search, filterCategory, filterRarity, sortBy, triedEntries, wantEntries])
 
   // ── Action: mark as tried ─────────────────────────────
   async function handleMarkAsTried(entry: ListEntry) {
@@ -307,7 +304,6 @@ export default function MyList() {
         <div className="flex gap-2 overflow-x-auto pb-0.5 sm:pb-0">
           <MiniSelect value={filterCategory}     onChange={setFilterCategory}     label="Category"     options={categories}  />
           <MiniSelect value={filterRarity}       onChange={setFilterRarity}       label="Rarity"       options={RARITIES}    />
-          <MiniSelect value={filterAvailability} onChange={setFilterAvailability} label="Availability" options={AVAILABILITIES} />
           <MiniSelect
             value={sortBy}
             onChange={(v) => setSortBy(v as SortBy)}
@@ -350,7 +346,7 @@ export default function MyList() {
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <EmptyState tab={tab} hasFilters={!!(search || filterCategory || filterRarity || filterAvailability)} />
+        <EmptyState tab={tab} hasFilters={!!(search || filterCategory || filterRarity)} />
       ) : (
         <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((entry) => (

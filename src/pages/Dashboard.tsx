@@ -101,10 +101,10 @@ function Skeleton({ className }: { className?: string }) {
 
 // ── Rarity pill colors ─────────────────────────────────────
 const RARITY_PILL: Record<string, string> = {
-  Common:    'bg-gray-100   text-gray-600   dark:bg-gray-800 dark:text-gray-400',
-  Uncommon:  'bg-green-100  text-green-700  dark:bg-green-900/40 dark:text-green-400',
-  Rare:      'bg-blue-100   text-blue-700   dark:bg-blue-900/40 dark:text-blue-400',
-  Epic:      'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
+  Common: 'bg-gray-100   text-gray-600   dark:bg-gray-800 dark:text-gray-400',
+  Uncommon: 'bg-green-100  text-green-700  dark:bg-green-900/40 dark:text-green-400',
+  Rare: 'bg-blue-100   text-blue-700   dark:bg-blue-900/40 dark:text-blue-400',
+  Epic: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
   Legendary: 'bg-amber-100  text-amber-700  dark:bg-amber-900/40 dark:text-amber-400',
 }
 
@@ -152,38 +152,38 @@ export default function Dashboard() {
     if (!user) return
     setLoading(true)
     try {
-    // Run all queries in parallel
-    const [
-      { count: totalProducts },
-      { count: triedCount },
-      { count: wantCount },
-      { data: activityData },
-      { data: allTriedPoints },
-    ] = await Promise.all([
-      // Total approved products
-      supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'approved'),
+      // Run all queries in parallel
+      const [
+        { count: totalProducts },
+        { count: triedCount },
+        { count: wantCount },
+        { data: activityData },
+        { data: allTriedPoints },
+      ] = await Promise.all([
+        // Total approved products
+        supabase
+          .from('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'approved'),
 
-      // User's tried count
-      supabase
-        .from('user_products')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'tried'),
+        // User's tried count
+        supabase
+          .from('user_products')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'tried'),
 
-      // User's want_to_try count
-      supabase
-        .from('user_products')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'want_to_try'),
+        // User's want_to_try count
+        supabase
+          .from('user_products')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'want_to_try'),
 
-      // Recent activity — last 5 tried products
-      supabase
-        .from('user_products')
-        .select(`
+        // Recent activity — last 5 tried products
+        supabase
+          .from('user_products')
+          .select(`
           id,
           tried_at,
           notes,
@@ -191,43 +191,43 @@ export default function Dashboard() {
             id, name, category, rarity_label, points, image_url
           )
         `)
-        .eq('user_id', user.id)
-        .eq('status', 'tried')
-        .order('tried_at', { ascending: false })
-        .limit(5),
+          .eq('user_id', user.id)
+          .eq('status', 'tried')
+          .order('tried_at', { ascending: false })
+          .limit(5),
 
-      // All tried products with their current points (for live total)
-      supabase
-        .from('user_products')
-        .select('products(points)')
-        .eq('user_id', user.id)
-        .eq('status', 'tried'),
-    ])
+        // All tried products with their current points (for live total)
+        supabase
+          .from('user_products')
+          .select('products(points)')
+          .eq('user_id', user.id)
+          .eq('status', 'tried'),
+      ])
 
-    // Calculate live total points from current product values
-    const livePoints = ((allTriedPoints ?? []) as unknown as { products: { points: number | null } | null }[])
-      .reduce((sum, row) => sum + (row.products?.points ?? 0), 0)
+      // Calculate live total points from current product values
+      const livePoints = ((allTriedPoints ?? []) as unknown as { products: { points: number | null } | null }[])
+        .reduce((sum, row) => sum + (row.products?.points ?? 0), 0)
 
-    // Rank: count users with strictly more points
-    const { count: rankCount } = await supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true })
-      .gt('total_points', livePoints)
+      // Rank: count users with strictly more points
+      const { count: rankCount } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .gt('total_points', livePoints)
 
-    setStats({
-      totalProducts: totalProducts ?? 0,
-      triedCount: triedCount ?? 0,
-      wantToTryCount: wantCount ?? 0,
-      rank: rankCount !== null ? rankCount + 1 : null,
-    })
+      setStats({
+        totalProducts: totalProducts ?? 0,
+        triedCount: triedCount ?? 0,
+        wantToTryCount: wantCount ?? 0,
+        rank: rankCount !== null ? rankCount + 1 : null,
+      })
 
-    setActivity((activityData as unknown as RecentActivity[]) ?? [])
+      setActivity((activityData as unknown as RecentActivity[]) ?? [])
 
-    // Sync profile total_points if it drifted (e.g. admin changed product points)
-    if (livePoints !== (profile?.total_points ?? -1)) {
-      await supabase.from('profiles').update({ total_points: livePoints }).eq('id', user.id)
-    }
-    await refreshProfile()
+      // Sync profile total_points if it drifted (e.g. admin changed product points)
+      if (livePoints !== (profile?.total_points ?? -1)) {
+        await supabase.from('profiles').update({ total_points: livePoints }).eq('id', user.id)
+      }
+      await refreshProfile()
     } catch (err) {
       console.error('Dashboard load error:', err)
     } finally {
@@ -395,7 +395,7 @@ export default function Dashboard() {
                 to="/explore"
                 className="mt-4 rounded-lg bg-amul-red px-4 py-1.5 text-xs font-semibold text-white hover:bg-amul-red-dark"
               >
-                Start exploring
+                Start Pagluing
               </Link>
             </div>
           ) : (
@@ -430,8 +430,8 @@ export default function Dashboard() {
                         <span className="text-[10px] text-[hsl(var(--muted-foreground))]">
                           {item.tried_at
                             ? new Date(item.tried_at).toLocaleDateString('en-IN', {
-                                day: 'numeric', month: 'short', year: 'numeric',
-                              })
+                              day: 'numeric', month: 'short', year: 'numeric',
+                            })
                             : ''}
                         </span>
                       </div>

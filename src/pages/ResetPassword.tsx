@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase"; // adjust path
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo.png";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -60,7 +61,7 @@ export default function ResetPassword() {
             to="/"
             className="inline-flex items-center gap-2 font-display font-bold text-amul-red text-2xl"
           >
-            <span className="text-4xl">🐄</span>
+            <img src={logo} alt="Amul Paglu Logo" className="h-12 w-12 object-contain" />
             <span>Amul Paglu</span>
           </Link>
           <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">

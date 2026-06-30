@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { friendlyError } from '@/lib/errors'
 import { cn } from '@/lib/utils'
+import logo from '@/assets/logo.png'
 
 // Username rules: 3–20 chars, letters/numbers/underscores only
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
@@ -121,7 +122,7 @@ export default function Signup() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center gap-2 font-display font-bold text-amul-red text-2xl">
-            <span className="text-4xl">🐄</span>
+            <img src={logo} alt="Amul Paglu Logo" className="h-12 w-12 object-contain" />
             <span>Amul Paglu</span>
           </Link>
           <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">

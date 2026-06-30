@@ -23,11 +23,11 @@ function Skeleton({ className }: { className?: string }) {
 // ── Tier gradient pill ─────────────────────────────────────
 function TierPill({ emoji, label, tierLabel }: { emoji: string; label: string; tierLabel: string }) {
   const grad: Record<string, string> = {
-    'Milk Drinker':          'from-gray-400 to-gray-500',
-    'Cheese Explorer':       'from-green-500 to-green-600',
+    'Milk Drinker': 'from-gray-400 to-gray-500',
+    'Cheese Explorer': 'from-green-500 to-green-600',
     'Ice Cream Connoisseur': 'from-cyan-400 to-cyan-600',
-    'Butter Aficionado':     'from-amber-400 to-amber-500',
-    'Amul Legend':           'from-amul-red to-amul-gold',
+    'Butter Aficionado': 'from-amber-400 to-amber-500',
+    'Amul Legend': 'from-amul-red to-amul-gold',
   }
   return (
     <span className={cn(
@@ -62,10 +62,10 @@ function CountUp({ to }: { to: number }) {
 export default function Leaderboard() {
   const { user, isLoading: authLoading } = useAuth()
 
-  const [entries,    setEntries]    = useState<LeaderEntry[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [myRank,     setMyRank]     = useState<number | null>(null)
-  const [myEntry,    setMyEntry]    = useState<LeaderEntry | null>(null)
+  const [entries, setEntries] = useState<LeaderEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [myRank, setMyRank] = useState<number | null>(null)
+  const [myEntry, setMyEntry] = useState<LeaderEntry | null>(null)
   const [totalUsers, setTotalUsers] = useState<number | null>(null)
 
   useEffect(() => {
@@ -139,9 +139,9 @@ export default function Leaderboard() {
   }
 
   const MEDAL = [
-    { icon: Crown,  color: 'text-amul-gold',       bg: 'bg-amber-50  dark:bg-amber-950/30',  border: 'border-amber-200 dark:border-amber-800' },
-    { icon: Medal,  color: 'text-slate-400',        bg: 'bg-slate-50  dark:bg-slate-800/40',  border: 'border-slate-200 dark:border-slate-700' },
-    { icon: Trophy, color: 'text-orange-400',       bg: 'bg-orange-50 dark:bg-orange-950/30', border: 'border-orange-200 dark:border-orange-800' },
+    { icon: Crown, color: 'text-amul-gold', bg: 'bg-amber-50  dark:bg-amber-950/30', border: 'border-amber-200 dark:border-amber-800' },
+    { icon: Medal, color: 'text-slate-400', bg: 'bg-slate-50  dark:bg-slate-800/40', border: 'border-slate-200 dark:border-slate-700' },
+    { icon: Trophy, color: 'text-orange-400', bg: 'bg-orange-50 dark:bg-orange-950/30', border: 'border-orange-200 dark:border-orange-800' },
   ]
 
   return (
@@ -151,7 +151,7 @@ export default function Leaderboard() {
           🏆 Leaderboard
         </h1>
         <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
-          Top {PAGE_SIZE} Amul hunters, ranked by points
+          Top {PAGE_SIZE} Amul Paglus, ranked by points
           {totalUsers !== null && (
             <> &middot; <span className="font-semibold text-[hsl(var(--foreground))]">{totalUsers}</span> registered users total</>
           )}
@@ -176,11 +176,11 @@ export default function Leaderboard() {
           {/* Podium cards — order: 2nd (left), 1st (centre), 3rd (right) */}
           <div className="flex items-end justify-center gap-3">
             {([entries[1], entries[0], entries[2]] as const).map((entry, podiumIdx) => {
-              
+
               const configs = [
-                { h: 'h-28', ring: 'ring-2 ring-amber-400', avatarRing: 'ring-4 ring-amber-400', podiumBg: 'bg-amber-400', labelBg: 'bg-amber-50 dark:bg-amber-950/30', icon: Crown,  iconColor: 'text-amber-600',  avatarSize: 'h-16 w-16 text-2xl', label: '1st', medalColor: '#FFD700' },
-                { h: 'h-20', ring: '',                       avatarRing: 'ring-4 ring-slate-400',  podiumBg: 'bg-slate-400',  labelBg: 'bg-slate-50 dark:bg-slate-800/40',  icon: Medal,  iconColor: 'text-slate-500',   avatarSize: 'h-12 w-12 text-xl',  label: '2nd', medalColor: '#C0C0C0' },
-                { h: 'h-16', ring: '',                       avatarRing: 'ring-4 ring-orange-400', podiumBg: 'bg-orange-400', labelBg: 'bg-orange-50 dark:bg-orange-950/30', icon: Trophy, iconColor: 'text-orange-500', avatarSize: 'h-12 w-12 text-xl',  label: '3rd', medalColor: '#CD7F32' },
+                { h: 'h-28', ring: 'ring-2 ring-amber-400', avatarRing: 'ring-4 ring-amber-400', podiumBg: 'bg-amber-400', labelBg: 'bg-amber-50 dark:bg-amber-950/30', icon: Crown, iconColor: 'text-amber-600', avatarSize: 'h-16 w-16 text-2xl', label: '1st', medalColor: '#FFD700' },
+                { h: 'h-20', ring: '', avatarRing: 'ring-4 ring-slate-400', podiumBg: 'bg-slate-400', labelBg: 'bg-slate-50 dark:bg-slate-800/40', icon: Medal, iconColor: 'text-slate-500', avatarSize: 'h-12 w-12 text-xl', label: '2nd', medalColor: '#C0C0C0' },
+                { h: 'h-16', ring: '', avatarRing: 'ring-4 ring-orange-400', podiumBg: 'bg-orange-400', labelBg: 'bg-orange-50 dark:bg-orange-950/30', icon: Trophy, iconColor: 'text-orange-500', avatarSize: 'h-12 w-12 text-xl', label: '3rd', medalColor: '#CD7F32' },
               ]
               const cfg = podiumIdx === 1 ? configs[0] : podiumIdx === 0 ? configs[1] : configs[2]
               const MedalIcon = cfg.icon
@@ -265,9 +265,9 @@ export default function Leaderboard() {
                   <div className={cn(
                     'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
                     rank === 1 ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/50' :
-                    rank === 2 ? 'bg-slate-100 text-slate-500 dark:bg-slate-800' :
-                    rank === 3 ? 'bg-orange-100 text-orange-500 dark:bg-orange-950/50' :
-                    'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]'
+                      rank === 2 ? 'bg-slate-100 text-slate-500 dark:bg-slate-800' :
+                        rank === 3 ? 'bg-orange-100 text-orange-500 dark:bg-orange-950/50' :
+                          'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]'
                   )}>
                     {MedalIcon ? <MedalIcon size={14} className={medal!.color} /> : rank}
                   </div>
