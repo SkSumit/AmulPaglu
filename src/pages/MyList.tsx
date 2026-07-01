@@ -51,6 +51,19 @@ export default function MyList() {
     }
   }, [authLoading, user?.id])
 
+  // Re-fetch data on visibility change (wake-up fallback)
+  useEffect(() => {
+    if (authLoading || !user) return
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.warn('MyList visible, re-fetching list...')
+        void loadData()
+      }
+    }
+    window.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => window.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [authLoading, user?.id])
+
   async function loadData() {
     if (!user) return
     setLoading(true)

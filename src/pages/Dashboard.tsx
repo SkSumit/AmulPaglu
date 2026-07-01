@@ -110,7 +110,7 @@ const RARITY_PILL: Record<string, string> = {
 
 // ── Main component ─────────────────────────────────────────
 export default function Dashboard() {
-  const { user, profile, isLoading: authLoading, refreshProfile } = useAuth()
+  const { user, profile, isLoading: authLoading, refreshProfile, ensureSession } = useAuth()
 
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [activity, setActivity] = useState<RecentActivity[]>([])
@@ -131,10 +131,25 @@ export default function Dashboard() {
     void loadBadges()
   }, [authLoading, user?.id])
 
+  // Re-fetch data on visibility change (wake-up fallback)
+  useEffect(() => {
+    if (authLoading || !user) return
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.warn('Dashboard visible, re-fetching stats/badges...')
+        void loadDashboard()
+        void loadBadges()
+      }
+    }
+    window.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => window.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [authLoading, user?.id])
+
   async function loadBadges() {
     if (!user) return
     setBadgesLoading(true)
     try {
+      await ensureSession()
       const [{ data: allB }, { data: earnedB }] = await Promise.all([
         supabase.from('badges').select('*').order('created_at', { ascending: true }),
         supabase.from('user_badges').select('badge_slug, earned_at').eq('user_id', user.id),
@@ -152,6 +167,7 @@ export default function Dashboard() {
     if (!user) return
     setLoading(true)
     try {
+      await ensureSession()
       // Run all queries in parallel
       const [
         { count: totalProducts },

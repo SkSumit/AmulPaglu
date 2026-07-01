@@ -12,6 +12,10 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    // Disable browser Web Locks to prevent deadlocks when tabs sleep
+    lock: (async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
+      return await fn()
+    }) as any,
   },
 })
 

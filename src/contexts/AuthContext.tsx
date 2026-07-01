@@ -35,6 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // on TOKEN_REFRESHED events (fires every ~55 min) from clearing the session
   const profileLoadedForRef = useRef<string | null>(null)
 
+  // Shared active refresh promise to deduplicate concurrent refresh attempts
+  const refreshPromiseRef = useRef<Promise<Session | null> | null>(null)
+
   async function fetchOrCreateProfile(user: User): Promise<Profile | null> {
     // Try to fetch existing profile first
     const { data, error } = await supabase
@@ -75,11 +78,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(p)
   }
 
+  // A safe, deduplicated wrapper around refreshSession with a 5s timeout
+  async function safeRefreshSession(): Promise<Session | null> {
+    if (refreshPromiseRef.current) {
+      return refreshPromiseRef.current
+    }
+
+    refreshPromiseRef.current = (async () => {
+      try {
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Session refresh timed out after 5000ms')), 5000)
+        )
+        const refreshPromise = supabase.auth.refreshSession()
+        const { data, error } = await Promise.race([refreshPromise, timeoutPromise]) as any
+        if (error) throw error
+        return data?.session ?? null
+      } finally {
+        refreshPromiseRef.current = null
+      }
+    })()
+
+    return refreshPromiseRef.current
+  }
+
   // ── Ensure session is fresh ────────────────────────────
-  // Supabase JS autoRefreshToken handles this internally. 
-  // Manual refreshes cause race conditions and invalidate tokens.
+  // Checks token expiry and performs manual token-refresh with a 5s timeout
+  // to prevent requests from hanging if connection was sleeping.
   async function ensureSession(): Promise<boolean> {
-    return !!session
+    if (!session) return false
+    const expiresAt = session.expires_at
+    if (!expiresAt) return true
+    
+    const now = Math.floor(Date.now() / 1000)
+    // If token has expired or is close to expiring (within 15 seconds), refresh it!
+    if (expiresAt - now < 15) {
+      try {
+        console.warn('Session close to expiry or expired, executing timeout-protected refresh...')
+        const s = await safeRefreshSession()
+        if (s) {
+          setSession(s)
+          return true
+        }
+        return false
+      } catch (err) {
+        console.warn('Session verification/refresh failed:', err)
+        await signOut()
+        return false
+      }
+    }
+    return true
   }
 
 
@@ -118,27 +165,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setSession(s)
         setIsLoading(false)
-
-        // Fetch profile only when the user actually changes or on initial load.
-        // Skipping on TOKEN_REFRESHED avoids an extra DB round-trip every hour
-        // and prevents a brief null-profile flash that breaks page guards.
-        const isNewUser = profileLoadedForRef.current !== s.user.id
-        if (isNewUser || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-          const p = await fetchOrCreateProfile(s.user)
-          if (mounted) {
-            setProfile(p)
-            profileLoadedForRef.current = s.user.id
-          }
-        }
       }
     )
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && mounted) {
+        try {
+          console.warn('Tab visible, forcing supabase.auth.refreshSession() via safeRefreshSession()...')
+          const s = await safeRefreshSession()
+          if (s && mounted) {
+            setSession(s)
+          }
+        } catch (err) {
+          console.warn('Tab visibility session refresh failed:', err)
+        }
+      }
+    }
+
+    window.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       mounted = false
       clearTimeout(timer)
       subscription.unsubscribe()
+      window.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
+
+  // Load user profile asynchronously when the session user changes
+  // to avoid deadlocking the Supabase client during auth state changes
+  useEffect(() => {
+    let mounted = true
+    if (!session?.user) {
+      setProfile(null)
+      profileLoadedForRef.current = null
+      return
+    }
+
+    const isNewUser = profileLoadedForRef.current !== session.user.id
+    if (isNewUser) {
+      setIsLoading(true)
+      fetchOrCreateProfile(session.user)
+        .then((p) => {
+          if (mounted) {
+            setProfile(p)
+            profileLoadedForRef.current = session.user.id
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching profile in useEffect:', err)
+        })
+        .finally(() => {
+          if (mounted) {
+            setIsLoading(false)
+          }
+        })
+    } else {
+      setIsLoading(false)
+    }
+
+    return () => {
+      mounted = false
+    }
+  }, [session?.user?.id])
 
   async function signOut() {
     try {
