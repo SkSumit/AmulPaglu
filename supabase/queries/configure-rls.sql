@@ -90,3 +90,11 @@ create policy "suggestions_update_admin"
   to authenticated
   using (public.is_admin())
   with check (public.is_admin());
+
+-- ---------- scrape_logs ----------
+drop policy if exists "scrape_logs_admin_all" on public.scrape_logs;
+create policy "scrape_logs_admin_all"
+  on public.scrape_logs
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());

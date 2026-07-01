@@ -54,7 +54,7 @@ create table if not exists public.scrape_logs (
   run_at timestamptz default now(),
   products_found integer,
   new_products integer,
-  status text check (status in ('success', 'partial', 'failed')),
+  status text check (status in ('running', 'success', 'partial', 'failed')),
   log_detail jsonb
 );
  

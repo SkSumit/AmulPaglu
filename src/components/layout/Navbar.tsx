@@ -8,10 +8,10 @@ import { cn } from '@/lib/utils'
 import logo from '@/assets/logo.png'
 
 const NAV_LINKS = [
-  { to: '/explore',     label: 'Explore'     },
-  { to: '/my-list',     label: 'My List'     },
+  { to: '/explore', label: 'Explore' },
+  { to: '/my-list', label: 'My List' },
   { to: '/leaderboard', label: 'Leaderboard' },
-  { to: '/suggest',     label: 'Suggest'     },
+  { to: '/suggest', label: 'Suggest' },
 ]
 
 export function Navbar() {
@@ -155,7 +155,7 @@ export function Navbar() {
                 to="/login"
                 className="rounded-lg px-3 py-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
               >
-                Log in
+                Sign In
               </Link>
               <Link
                 to="/signup"
