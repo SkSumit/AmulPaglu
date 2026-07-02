@@ -23,11 +23,11 @@ function Skeleton({ className }: { className?: string }) {
 // ── Tier gradient pill ─────────────────────────────────────
 function TierPill({ emoji, label, tierLabel }: { emoji: string; label: string; tierLabel: string }) {
   const grad: Record<string, string> = {
-    'Milk Drinker': 'from-gray-400 to-gray-500',
-    'Cheese Explorer': 'from-green-500 to-green-600',
-    'Ice Cream Connoisseur': 'from-cyan-400 to-cyan-600',
-    'Butter Aficionado': 'from-amber-400 to-amber-500',
-    'Amul Legend': 'from-amul-red to-amul-gold',
+    'Lactose Trainee': 'from-gray-400 to-gray-500',
+    'Shrikhand Scholar': 'from-green-500 to-green-600',
+    'Kulfi Kingpin': 'from-cyan-400 to-cyan-600',
+    'Makhan Chor': 'from-amber-400 to-amber-500',
+    'Amul Paglu': 'from-amul-red to-amul-gold',
   }
   return (
     <span className={cn(

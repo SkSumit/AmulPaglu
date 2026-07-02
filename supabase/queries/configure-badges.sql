@@ -24,11 +24,11 @@ CREATE TABLE IF NOT EXISTS badges (
 ALTER TABLE badges ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "badges_select_authenticated" ON badges;
+DROP POLICY IF EXISTS "badges_select_all" ON badges;
 DROP POLICY IF EXISTS "badges_all_admin" ON badges;
 
-CREATE POLICY "badges_select_authenticated"
+CREATE POLICY "badges_select_all"
   ON badges FOR SELECT
-  TO authenticated
   USING (true);
 
 CREATE POLICY "badges_all_admin"
@@ -55,13 +55,12 @@ ALTER TABLE user_badges
 ALTER TABLE user_badges ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "user_badges_select_own" ON user_badges;
+DROP POLICY IF EXISTS "user_badges_select_all" ON user_badges;
 DROP POLICY IF EXISTS "user_badges_no_direct_write" ON user_badges;
 
-CREATE POLICY "user_badges_select_own"
+CREATE POLICY "user_badges_select_all"
   ON user_badges FOR SELECT
-  TO authenticated
-  USING ( user_id = auth.uid()
-    OR (SELECT is_admin FROM profiles WHERE id = auth.uid()) = true );
+  USING (true);
 
 -- No direct INSERT/UPDATE/DELETE from client — only via SECURITY DEFINER function
 CREATE POLICY "user_badges_no_direct_write"

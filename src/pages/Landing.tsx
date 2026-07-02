@@ -34,15 +34,7 @@ const RARITY_PILL: Record<string, string> = {
     "bg-amber-100  text-amber-700  dark:bg-amber-900/40 dark:text-amber-400",
 };
 
-// Static badge showcase (seeded slugs always present)
-const BADGE_SHOWCASE = [
-  { icon: "🎉", name: "First Try", desc: "Try your first product" },
-  { icon: "🧭", name: "Explorer", desc: "Try 5+ products" },
-  { icon: "👑", name: "Legendary Hunter", desc: "Try a 5-pt product" },
-  { icon: "🧀", name: "Cheese Head", desc: "Try 3 cheese products" },
-  { icon: "🍦", name: "Ice Cream Fanatic", desc: "Try 5 ice cream items" },
-  { icon: "🏆", name: "Completionist", desc: "Clear a whole category" },
-];
+// FEATURES list for homepage cards
 
 const FEATURES = [
   {
@@ -63,7 +55,7 @@ const FEATURES = [
   {
     icon: Trophy,
     title: "Compete on the leaderboard",
-    desc: "Race against other Amul fans to become the top Amul Legend in India.",
+    desc: "Race against other Amul fans to become the top Amul Paglu in India.",
   },
   {
     icon: Award,
@@ -121,6 +113,10 @@ export default function Landing() {
       image_url: string | null;
     }>
   >([]);
+  const [allBadges, setAllBadges] = useState<
+    Array<{ icon: string; name: string; description: string }>
+  >([]);
+  const [tierCounts, setTierCounts] = useState<Record<string, number> | null>(null);
   const [lbLoading, setLbLoading] = useState(true);
 
   useEffect(() => {
@@ -131,6 +127,8 @@ export default function Landing() {
         setUserCount(data.user_count);
         setProductCount(data.product_count);
         setPreviewProducts(data.preview_products);
+        setTierCounts(data.tier_counts);
+        setAllBadges(data.all_badges || []);
       }
 
       setLbLoading(false);
@@ -158,6 +156,18 @@ export default function Landing() {
 
   // Redirect logged-in users to dashboard
   if (!isLoading && session) return <Navigate to="/dashboard" replace />;
+
+  const fallbackBadges = [
+    { icon: "🎉", name: "First Try", description: "Try your first product" },
+    { icon: "🧭", name: "Explorer", description: "Try 5+ products" },
+    { icon: "👑", name: "Legendary Hunter", description: "Try a 5-pt product" },
+    { icon: "🧀", name: "Cheese Head", description: "Try 3 cheese products" },
+    { icon: "🍦", name: "Ice Cream Fanatic", description: "Try 5 ice cream items" },
+    { icon: "🏆", name: "Completionist", description: "Clear a whole category" },
+  ];
+
+  const displayedBadges = allBadges.length > 0 ? allBadges.slice(0, 6) : fallbackBadges;
+  const remainingBadgesCount = allBadges.length > 0 ? (allBadges.length - displayedBadges.length) : 15;
 
   return (
     <div className="overflow-x-hidden bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
@@ -243,8 +253,8 @@ export default function Landing() {
             <strong className="text-[hsl(var(--foreground))]">
               {productCount ? `${productCount}+` : "156+"} products
             </strong>
-            . Most people know 10. Track your journey from <em>Milk Drinker</em>{" "}
-            to <em>Amul Legend</em> — one obscure find at a time.
+            . Most people know 10. Track your journey from <em>Lactose Trainee</em>{" "}
+            to <em>Amul Paglu</em> — one obscure find at a time.
           </p>
 
           {/* CTAs */}
@@ -393,7 +403,7 @@ export default function Landing() {
                   🏆 Live rankings
                 </span>
                 <h2 className="font-display text-2xl font-bold sm:text-3xl">
-                  Who's the top <span className="text-amul-red">Amul Legend?</span>
+                  Who's the top <span className="text-amul-red">Amul Paglu?</span>
                 </h2>
                 <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
                   Real-time rankings — no sign-in needed to see them.
@@ -495,7 +505,7 @@ export default function Landing() {
           <div className="reveal mb-12 text-center">
             <h2 className="font-display text-2xl font-bold sm:text-3xl">
               Everything you need to become an
-              <span className="text-amul-red"> Amul Legend</span>
+              <span className="text-amul-red"> Amul Paglu</span>
             </h2>
             <p className="mt-3 text-sm text-[hsl(var(--muted-foreground))] sm:text-base">
               Track, discover, and compete — all in one place.
@@ -547,6 +557,7 @@ export default function Landing() {
                   ? `${tier.minPoints}+ pts`
                   : `${tier.minPoints}–${tier.maxPoints} pts`;
                 const widths = ["w-1/5", "w-2/5", "w-3/5", "w-4/5", "w-full"];
+                const count = tierCounts ? (tierCounts[tier.label] ?? 0) : 0;
                 return (
                   <div
                     key={tier.label}
@@ -556,8 +567,13 @@ export default function Landing() {
                     <span className="text-2xl">{tier.emoji}</span>
                     <div className="flex-1">
                       <div className="mb-1.5 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                        <span className="text-sm font-semibold text-[hsl(var(--foreground))] flex items-center gap-2">
                           {tier.label}
+                          {tierCounts && (
+                            <span className="rounded-full bg-[hsl(var(--muted))] px-2 py-0.5 text-[10px] font-bold text-[hsl(var(--muted-foreground))]">
+                              {count} user{count !== 1 ? "s" : ""}
+                            </span>
+                          )}
                         </span>
                         <span className="text-xs text-[hsl(var(--muted-foreground))]">
                           {ptLabel}
@@ -622,19 +638,17 @@ export default function Landing() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {BADGE_SHOWCASE.map((b, i) => (
+                {displayedBadges.map((b, i) => (
                   <div
                     key={b.name}
-                    className="reveal group/badge flex flex-col sm:flex-row items-center sm:items-start gap-3 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 h-full shadow-card transition-all duration-200 hover:shadow-card-lg hover:-translate-y-0.5 hover:border-amul-red/20"
+                    title={b.description}
+                    className="reveal group/badge flex items-center gap-3 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-card transition-all duration-200 hover:shadow-card-lg hover:-translate-y-0.5 hover:border-amul-red/20 cursor-help"
                     style={{ animationDelay: `${i * 60}ms` }}
                   >
                     <span className="text-3xl leading-none transition-transform duration-200 group-hover/badge:scale-110 shrink-0">{b.icon}</span>
-                    <div className="min-w-0 text-center sm:text-left">
-                      <p className="font-semibold text-sm text-[hsl(var(--foreground))]">
+                    <div className="min-w-0 text-left w-full">
+                      <p className="font-semibold text-xs sm:text-sm text-[hsl(var(--foreground))] leading-tight break-words" title={b.name}>
                         {b.name}
-                      </p>
-                      <p className="mt-0.5 text-xs text-[hsl(var(--muted-foreground))]">
-                        {b.desc}
                       </p>
                     </div>
                   </div>
@@ -642,7 +656,9 @@ export default function Landing() {
               </div>
 
               <p className="mt-6 text-center lg:text-left text-xs text-[hsl(var(--muted-foreground))]">
-                …and many more to discover once you start exploring.
+                {remainingBadgesCount > 0 
+                  ? `…and ${remainingBadgesCount} more to discover once you start exploring.`
+                  : "…and many more to discover once you start exploring."}
               </p>
             </div>
           </div>

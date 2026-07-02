@@ -8,6 +8,8 @@ declare
   total_user_count int;
   total_product_count int;
   preview_products jsonb;
+  tier_counts jsonb;
+  all_badges jsonb;
 begin
   -- 1. Get Top Users
   select coalesce(jsonb_agg(row_to_json(u)), '[]'::jsonb) into top_users
@@ -28,12 +30,31 @@ begin
     order by points desc limit 12
   ) p;
 
+  -- 5. Get Tier Counts
+  select jsonb_build_object(
+    'Lactose Trainee', (select count(*) from public.profiles where total_points between 0 and 50),
+    'Shrikhand Scholar', (select count(*) from public.profiles where total_points between 51 and 150),
+    'Kulfi Kingpin', (select count(*) from public.profiles where total_points between 151 and 300),
+    'Makhan Chor', (select count(*) from public.profiles where total_points between 301 and 500),
+    'Amul Paglu', (select count(*) from public.profiles where total_points >= 501)
+  ) into tier_counts;
+
+  -- 6. Get All Badges
+  select coalesce(jsonb_agg(row_to_json(b)), '[]'::jsonb) into all_badges
+  from (
+    select icon, name, description 
+    from public.badges 
+    order by created_at asc
+  ) b;
+
   -- Return everything as a single JSON object
   return jsonb_build_object(
     'top_users', top_users,
     'user_count', total_user_count,
     'product_count', total_product_count,
-    'preview_products', preview_products
+    'preview_products', preview_products,
+    'tier_counts', tier_counts,
+    'all_badges', all_badges
   );
 end;
 $$;

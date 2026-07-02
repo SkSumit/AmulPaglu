@@ -40,11 +40,11 @@ export interface Tier {
 }
 
 export const TIERS: Tier[] = [
-  { label: 'Milk Drinker',        emoji: '🥛', minPoints: 0,   maxPoints: 50,  color: 'tier-milk'    },
-  { label: 'Cheese Explorer',     emoji: '🧀', minPoints: 51,  maxPoints: 150, color: 'tier-cheese'  },
-  { label: 'Ice Cream Connoisseur', emoji: '🍦', minPoints: 151, maxPoints: 300, color: 'tier-icecream' },
-  { label: 'Butter Aficionado',   emoji: '🧈', minPoints: 301, maxPoints: 500, color: 'tier-butter'  },
-  { label: 'Amul Legend',         emoji: '👑', minPoints: 501, maxPoints: Infinity, color: 'tier-legend' },
+  { label: 'Lactose Trainee',     emoji: '🍼', minPoints: 0,   maxPoints: 50,  color: 'tier-milk'    },
+  { label: 'Shrikhand Scholar',   emoji: '🥣', minPoints: 51,  maxPoints: 150, color: 'tier-cheese'  },
+  { label: 'Kulfi Kingpin',       emoji: '🍨', minPoints: 151, maxPoints: 300, color: 'tier-icecream' },
+  { label: 'Makhan Chor',         emoji: '🧈', minPoints: 301, maxPoints: 500, color: 'tier-butter'  },
+  { label: 'Amul Paglu',          emoji: '👑', minPoints: 501, maxPoints: Infinity, color: 'tier-legend' },
 ]
 
 export function getTier(points: number): Tier {

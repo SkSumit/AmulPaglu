@@ -47,10 +47,10 @@ create policy "products_delete_admin"
  
 -- ---------- user_products ----------
 drop policy if exists "user_products_select_own" on public.user_products;
-create policy "user_products_select_own"
+drop policy if exists "user_products_select_all" on public.user_products;
+create policy "user_products_select_all"
   on public.user_products for select
-  to authenticated
-  using (user_id = auth.uid());
+  using (true);
  
 drop policy if exists "user_products_insert_own" on public.user_products;
 create policy "user_products_insert_own"
