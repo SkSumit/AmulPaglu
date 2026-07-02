@@ -67,6 +67,8 @@ export type BadgeConditionType =
   | 'rarity_tried_count'
   | 'suggestion_approved'
   | 'early_adopter'
+  | 'all_complete'
+  | 'product_tried'
 
 export type Badge = Database['public']['Tables']['badges']['Row']
 export type UserBadge = Database['public']['Tables']['user_badges']['Row']
@@ -85,10 +87,18 @@ export function conditionSummary(condition: BadgeConditionJson): string {
       return `Try all products in "${condition.category}"`
     case 'rarity_tried_count':
       return `Try ${condition.minimum_count} or more products with ${condition.minimum_points}+ points`
-    case 'suggestion_approved':
-      return 'Get at least 1 product suggestion approved'
-    case 'early_adopter':
-      return `Sign up before ${condition.before_date ?? 'a certain date'}`
+    case 'suggestion_approved': {
+      const min = condition.minimum_count ?? 1
+      return `Get at least ${min} product suggestion${min !== 1 ? 's' : ''} approved`
+    }
+    case 'early_adopter': {
+      const min = condition.minimum_count ?? 50
+      return `Sign up as one of the first ${min} users`
+    }
+    case 'all_complete':
+      return 'Try all approved products in the entire catalog'
+    case 'product_tried':
+      return `Try the product matching "${condition.product_name ?? ''}"`
     default:
       return 'Special condition'
   }

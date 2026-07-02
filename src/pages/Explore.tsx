@@ -182,6 +182,7 @@ export default function Explore() {
       } else {
         setUserProductMap((m) => ({ ...m, [product.id]: { id: data.id, status: 'want_to_try', tried_at: null } }))
         addToast('Added to your list! 📚', 'success')
+        if (prev?.status === 'tried') void revokeBadgesIfNeeded(user.id)
       }
     } catch (err) {
       // Revert

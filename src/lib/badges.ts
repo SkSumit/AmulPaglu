@@ -9,13 +9,14 @@ export async function checkAndAwardBadges(
   userId: string,
 ): Promise<UnlockedBadge[]> {
   try {
-    const { data, error } = await supabase.rpc('check_and_award_badges', {
+    const { data, error } = await supabase.rpc('get_and_clear_new_badges', {
       p_user_id: userId,
     })
     if (error || !data) return []
-    return (data as { new_icon: string; new_name: string; new_slug: string }[]).map((b) => ({
+    return data.map((b) => ({
       icon:        b.new_icon,
       name:        b.new_name,
+      description: b.new_description,
     }))
   } catch {
     return []

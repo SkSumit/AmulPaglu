@@ -12,6 +12,7 @@ interface BadgeCardProps {
 }
 
 function BadgeCard({ badge, earned, onClick }: BadgeCardProps) {
+  const isPagluest = badge.slug === 'amul_pagluest'
   return (
     <button
       onClick={onClick}
@@ -19,7 +20,9 @@ function BadgeCard({ badge, earned, onClick }: BadgeCardProps) {
       className={cn(
         'relative flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all hover:scale-105 hover:shadow-md focus:outline-none',
         earned
-          ? 'border-amul-red/20 bg-amul-red/5 dark:bg-amul-red/10 badge-shine'
+          ? isPagluest
+            ? 'badge-pagluest'
+            : 'border-amul-red/20 bg-amul-red/5 dark:bg-amul-red/10 badge-shine'
           : 'border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 opacity-50 grayscale'
       )}
     >
@@ -61,8 +64,12 @@ function BadgeModal({ badge, earned, earnedAt, onClose }: BadgeModalProps) {
 
         <div className={cn('flex flex-col items-center text-center', !earned && 'opacity-60 grayscale')}>
           <div className={cn(
-            'flex h-20 w-20 items-center justify-center rounded-2xl text-5xl',
-            earned ? 'bg-amul-red/10' : 'bg-[hsl(var(--muted))]'
+            'flex h-20 w-20 items-center justify-center rounded-2xl text-5xl transition-all',
+            earned
+              ? badge.slug === 'amul_pagluest'
+                ? 'bg-gradient-to-br from-amber-400/20 to-yellow-500/30 border border-amber-400/50 shadow-[0_0_20px_rgba(245,158,11,0.4)] animate-bounce-gentle'
+                : 'bg-amul-red/10'
+              : 'bg-[hsl(var(--muted))]'
           )}>
             {badge.icon}
           </div>
@@ -73,8 +80,13 @@ function BadgeModal({ badge, earned, earnedAt, onClose }: BadgeModalProps) {
             </div>
           )}
           {earned && (
-            <div className="mt-3 flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
-              ✓ Earned{earnedAt ? ` · ${new Date(earnedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
+            <div className={cn(
+              'mt-3 flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold',
+              badge.slug === 'amul_pagluest'
+                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+            )}>
+              ✓ {badge.slug === 'amul_pagluest' ? 'Ultimate Title Earned' : 'Earned'}{earnedAt ? ` · ${new Date(earnedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
             </div>
           )}
         </div>

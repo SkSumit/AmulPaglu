@@ -13,8 +13,10 @@ const CONDITION_TYPES = [
   { value: 'category_tried_count', label: 'Tried N products in a category' },
   { value: 'category_complete',    label: 'Tried ALL products in a category' },
   { value: 'rarity_tried_count',   label: 'Tried N products with points ≥ X' },
-  { value: 'suggestion_approved',  label: 'Had a suggestion approved' },
+  { value: 'suggestion_approved',  label: 'Had N suggestions approved' },
   { value: 'early_adopter',        label: 'Signed up before a specific date' },
+  { value: 'all_complete',         label: 'Tried ALL approved products total (dynamic)' },
+  { value: 'product_tried',        label: 'Tried a specific product' },
 ] as const
 
 // ── Empty form state ───────────────────────────────────────
@@ -28,6 +30,7 @@ function emptyForm() {
     category:       '',
     minimum_points: '',
     before_date:    '',
+    product_name:   '',
   }
 }
 
@@ -44,9 +47,13 @@ function buildCondition(f: FormState): BadgeConditionJson {
     case 'rarity_tried_count':
       return { type: 'rarity_tried_count', minimum_points: Number(f.minimum_points), minimum_count: Number(f.minimum_count) }
     case 'suggestion_approved':
-      return { type: 'suggestion_approved' }
+      return { type: 'suggestion_approved', minimum_count: f.minimum_count ? Number(f.minimum_count) : undefined }
     case 'early_adopter':
       return { type: 'early_adopter', before_date: f.before_date }
+    case 'all_complete':
+      return { type: 'all_complete' }
+    case 'product_tried':
+      return { type: 'product_tried', product_name: f.product_name }
     default:
       return { type: 'tried_count', minimum_count: 1 }
   }
@@ -63,6 +70,7 @@ function formFromBadge(b: Badge): FormState {
     category:       c.category ?? '',
     minimum_points: c.minimum_points?.toString() ?? '',
     before_date:    c.before_date ?? '',
+    product_name:   c.product_name ?? '',
   }
 }
 
@@ -394,7 +402,7 @@ export default function AdminBadges() {
               </div>
 
               {/* Dynamic condition fields */}
-              {(form.condition_type === 'tried_count' || form.condition_type === 'category_tried_count' || form.condition_type === 'rarity_tried_count') && (
+              {(form.condition_type === 'tried_count' || form.condition_type === 'category_tried_count' || form.condition_type === 'rarity_tried_count' || form.condition_type === 'suggestion_approved') && (
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-[hsl(var(--foreground))]">Minimum Count</label>
                   <input
@@ -441,6 +449,19 @@ export default function AdminBadges() {
                     type="date"
                     value={form.before_date}
                     onChange={(e) => setForm({ ...form, before_date: e.target.value })}
+                    className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2.5 text-sm outline-none focus:border-amul-red focus:ring-2 focus:ring-amul-red/20"
+                  />
+                </div>
+              )}
+
+              {form.condition_type === 'product_tried' && (
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-[hsl(var(--foreground))]">Product Name Match (SQL ILIKE)</label>
+                  <input
+                    type="text"
+                    value={form.product_name}
+                    onChange={(e) => setForm({ ...form, product_name: e.target.value })}
+                    placeholder="e.g. %haldi% or %camel%"
                     className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2.5 text-sm outline-none focus:border-amul-red focus:ring-2 focus:ring-amul-red/20"
                   />
                 </div>
