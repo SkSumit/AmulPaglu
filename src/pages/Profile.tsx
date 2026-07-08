@@ -148,9 +148,19 @@ export default function ProfilePage() {
             </>
           ) : (
             <>
-              <h1 className="font-display text-2xl font-bold text-[hsl(var(--foreground))]">
-                {profile?.username}
-                {isOwnProfile && <span className="ml-2 text-sm font-normal text-[hsl(var(--muted-foreground))]">(you)</span>}
+              <h1 className="font-display text-2xl font-bold text-[hsl(var(--foreground))] flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <span>{profile?.username}</span>
+                {profile?.is_admin && (
+                  <span className="rounded-full bg-amul-red/5 border border-amul-red/20 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amul-red uppercase shrink-0">
+                    Creator
+                  </span>
+                )}
+                {profile?.username === 'blah_blah' && (
+                  <span className="rounded-full bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 px-2 py-0.5 text-[9px] font-bold tracking-wider text-blue-600 dark:text-blue-400 uppercase shrink-0">
+                    Amul Girl
+                  </span>
+                )}
+                {isOwnProfile && <span className="text-sm font-normal text-[hsl(var(--muted-foreground))] shrink-0">(you)</span>}
               </h1>
               <div className="mt-1 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <span className="rounded-full bg-amul-red/10 px-2.5 py-1 text-xs font-semibold text-amul-red">

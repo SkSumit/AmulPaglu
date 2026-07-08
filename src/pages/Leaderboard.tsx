@@ -12,6 +12,7 @@ interface LeaderEntry {
   avatar_url: string | null
   total_points: number
   tried_count: number
+  is_admin: boolean
 }
 
 const PAGE_SIZE = 50
@@ -79,7 +80,7 @@ export default function Leaderboard() {
       const [{ data, error }, { count: userCount }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, username, avatar_url, total_points')
+          .select('id, username, avatar_url, total_points, is_admin')
           .order('total_points', { ascending: false })
           .limit(PAGE_SIZE),
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
@@ -104,7 +105,7 @@ export default function Leaderboard() {
       const rows: LeaderEntry[] = entries.map((e, i) => ({
         ...e,
         tried_count: triedCounts[i],
-      }))
+      })) as LeaderEntry[]
 
       setEntries(rows)
 
@@ -116,11 +117,11 @@ export default function Leaderboard() {
         } else {
           // User is outside top list — fetch their own stats
           const [profileRes, triedRes] = await Promise.all([
-            supabase.from('profiles').select('id,username,avatar_url,total_points').eq('id', user.id).single(),
+            supabase.from('profiles').select('id,username,avatar_url,total_points,is_admin').eq('id', user.id).single(),
             supabase.from('user_products').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('status', 'tried'),
           ])
           if (profileRes.data) {
-            const myData: LeaderEntry = { ...profileRes.data, tried_count: triedRes.count ?? 0 }
+            const myData: LeaderEntry = { ...profileRes.data, tried_count: triedRes.count ?? 0 } as LeaderEntry
             setMyEntry(myData)
             // Compute rank: how many users have more points
             const { count: above } = await supabase
@@ -202,8 +203,18 @@ export default function Leaderboard() {
                     {entry.username[0].toUpperCase()}
                   </div>
                   {/* Name + tier */}
-                  <p className="mt-2 max-w-full truncate px-1 text-center text-xs font-bold text-[hsl(var(--foreground))]">
-                    {isMe ? 'You' : entry.username}
+                  <p className="mt-2 max-w-full truncate px-1 text-center text-xs font-bold text-[hsl(var(--foreground))] flex flex-wrap items-center justify-center gap-1">
+                    <span>{isMe ? 'You' : entry.username}</span>
+                    {entry.is_admin && (
+                      <span className="rounded-full bg-amul-red/5 border border-amul-red/20 px-1 py-0.5 text-[8px] font-bold tracking-wider text-amul-red uppercase shrink-0 scale-90">
+                        Creator
+                      </span>
+                    )}
+                    {entry.username === 'blah_blah' && (
+                      <span className="rounded-full bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 px-1 py-0.5 text-[8px] font-bold tracking-wider text-blue-600 dark:text-blue-400 uppercase shrink-0 scale-90">
+                        Amul Girl
+                      </span>
+                    )}
                   </p>
                   <p className="mb-1 text-center text-[10px] text-[hsl(var(--muted-foreground))]">{tier.emoji} {tier.label}</p>
                   <p className="mb-1 text-center text-sm font-bold text-amul-gold"><CountUp to={entry.total_points} /> pts</p>
@@ -279,8 +290,18 @@ export default function Leaderboard() {
 
                   {/* Info */}
                   <div className="min-w-0 flex-1">
-                    <p className={cn('text-sm font-semibold truncate', isMe && 'text-amul-red')}>
-                      {isMe ? `${entry.username} (you)` : entry.username}
+                    <p className={cn('text-sm font-semibold truncate flex flex-wrap items-center gap-2', isMe && 'text-amul-red')}>
+                      <span>{isMe ? `${entry.username} (you)` : entry.username}</span>
+                      {entry.is_admin && (
+                        <span className="rounded-full bg-amul-red/5 border border-amul-red/20 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amul-red uppercase shrink-0">
+                          Creator
+                        </span>
+                      )}
+                      {entry.username === 'blah_blah' && (
+                        <span className="rounded-full bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 px-2 py-0.5 text-[9px] font-bold tracking-wider text-blue-600 dark:text-blue-400 uppercase shrink-0">
+                          Amul Girl
+                        </span>
+                      )}
                     </p>
                     <div className="mt-0.5 flex items-center gap-2">
                       <TierPill emoji={tier.emoji} label={tier.label} tierLabel={tier.label} />
@@ -310,7 +331,19 @@ export default function Leaderboard() {
                 {myEntry.username[0].toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-amul-red truncate">{myEntry.username} (you)</p>
+                <p className="text-sm font-semibold text-amul-red truncate flex flex-wrap items-center gap-2">
+                  <span>{myEntry.username} (you)</span>
+                  {myEntry.is_admin && (
+                    <span className="rounded-full bg-amul-red/5 border border-amul-red/20 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amul-red uppercase shrink-0">
+                      Creator
+                    </span>
+                  )}
+                  {myEntry.username === 'blah_blah' && (
+                    <span className="rounded-full bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 px-2 py-0.5 text-[9px] font-bold tracking-wider text-blue-600 dark:text-blue-400 uppercase shrink-0">
+                      Amul Girl
+                    </span>
+                  )}
+                </p>
                 <div className="mt-0.5 flex items-center gap-2">
                   <TierPill emoji={tier.emoji} label={tier.label} tierLabel={tier.label} />
                   <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{myEntry.tried_count} tried</span>

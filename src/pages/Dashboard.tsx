@@ -110,7 +110,7 @@ const RARITY_PILL: Record<string, string> = {
 
 // ── Main component ─────────────────────────────────────────
 export default function Dashboard() {
-  const { user, profile, isLoading: authLoading, refreshProfile, ensureSession } = useAuth()
+  const { user, profile, isLoading: authLoading, refreshProfile, ensureSession, isAdmin } = useAuth()
 
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [activity, setActivity] = useState<RecentActivity[]>([])
@@ -264,9 +264,22 @@ export default function Dashboard() {
       {/* ── Welcome banner ──────────────────────────────────── */}
       <div className="mb-8 flex flex-col gap-1">
         <p className="text-sm text-[hsl(var(--muted-foreground))]">Welcome back,</p>
-        <h1 className="font-display text-2xl font-bold text-[hsl(var(--foreground))] sm:text-3xl">
+        <h1 className="font-display text-2xl font-bold text-[hsl(var(--foreground))] sm:text-3xl flex flex-wrap items-center gap-2">
           {profile ? (
-            <>{profile.username} <span>{tier.emoji}</span></>
+            <>
+              <span>{profile.username}</span>
+              {isAdmin && (
+                <span className="rounded-full bg-amul-red/5 border border-amul-red/20 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amul-red uppercase shrink-0">
+                  Creator
+                </span>
+              )}
+              {profile.username === 'blah_blah' && (
+                <span className="rounded-full bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 px-2 py-0.5 text-[9px] font-bold tracking-wider text-blue-600 dark:text-blue-400 uppercase shrink-0">
+                  Amul Girl
+                </span>
+              )}
+              <span>{tier.emoji}</span>
+            </>
           ) : (
             <span className="inline-block h-7 w-40 animate-pulse rounded-lg bg-[hsl(var(--muted))] align-middle" />
           )}

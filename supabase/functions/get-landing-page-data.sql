@@ -13,7 +13,7 @@ declare
 begin
   -- 1. Get Top Users
   select coalesce(jsonb_agg(row_to_json(u)), '[]'::jsonb) into top_users
-  from (select id, username, total_points from public.profiles order by total_points desc limit 10) u;
+  from (select id, username, total_points, is_admin from public.profiles order by total_points desc limit 10) u;
 
   -- 2. Get User Count
   select count(*) into total_user_count from public.profiles;
