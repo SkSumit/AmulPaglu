@@ -191,7 +191,7 @@ export default function Leaderboard() {
                 <Link
                   key={entry.id}
                   to={`/profile/${entry.username}`}
-                  className="flex flex-col items-center gap-0 min-w-0 w-28 sm:w-32"
+                  className="flex flex-col items-center gap-0 min-w-0 flex-1 max-w-[120px]"
                 >
                   {/* Avatar floating above podium */}
                   <div className={cn(

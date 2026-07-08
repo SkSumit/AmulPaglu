@@ -336,7 +336,7 @@ export default function Landing() {
 
       {/* ── Stats bar ───────────────────────────────────────── */}
       <section className="border-y border-[hsl(var(--border))] bg-[hsl(var(--card))] py-8">
-        <div className="reveal mx-auto grid max-w-4xl grid-cols-3 gap-6 px-4 text-center sm:grid-cols-3">
+        <div className="reveal mx-auto grid max-w-4xl grid-cols-1 sm:grid-cols-3 gap-6 px-4 text-center">
           {[
             {
               value: productCount ?? 0,

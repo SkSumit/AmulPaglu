@@ -451,6 +451,7 @@ export default function MyList() {
               onAddToList={() => {/* already on list */}}
               onMarkAsTried={() => handleMarkAsTried(entry)}
               onRemoveFromList={() => handleRemoveFromList(entry)}
+              addToast={addToast}
             />
           ))}
         </div>

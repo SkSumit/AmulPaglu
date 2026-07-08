@@ -378,7 +378,7 @@ export default function Dashboard() {
       <div className="grid gap-5 lg:grid-cols-3">
 
         {/* Recent activity */}
-        <div className="lg:col-span-2 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 shadow-card">
+        <div className="lg:col-span-2 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 shadow-card min-w-0">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-semibold text-[hsl(var(--foreground))]">
               <Clock size={16} className="text-[hsl(var(--muted-foreground))]" />
@@ -447,7 +447,7 @@ export default function Dashboard() {
                       <p className="truncate text-sm font-medium text-[hsl(var(--foreground))]">
                         {displayName}
                       </p>
-                      <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                         {p?.rarity_label && (
                           <span className={cn(
                             'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
@@ -478,7 +478,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick actions */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 min-w-0">
           <h2 className="font-semibold text-[hsl(var(--foreground))]">Quick actions</h2>
 
           {[
@@ -514,12 +514,12 @@ export default function Dashboard() {
             <Link
               key={to}
               to={to}
-              className="flex items-center gap-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-card transition-all hover:shadow-card-lg hover:-translate-y-0.5"
+              className="flex items-center gap-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-card transition-all hover:shadow-card-lg hover:-translate-y-0.5 min-w-0 w-full"
             >
               <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', color)}>
                 <Icon size={18} />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-[hsl(var(--foreground))]">{label}</p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))] truncate">{desc}</p>
               </div>

@@ -49,7 +49,10 @@ export default function Explore() {
   }, [products, userProductMap])
 
   // Filters
-  const [search,              setSearch]              = useState('')
+  const [search,              setSearch]              = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('search') || ''
+  })
   const [filterCategory,      setFilterCategory]      = useState('')
   const [filterRarity,        setFilterRarity]        = useState('')
   const [filterStatus,        setFilterStatus]        = useState<StatusFilter>('all')
@@ -589,6 +592,7 @@ export default function Explore() {
                     onAddToList={() => handleAddToList(product)}
                     onMarkAsTried={() => handleMarkAsTried(product)}
                     onRemoveFromList={up ? () => handleRemoveFromList(product) : undefined}
+                    addToast={addToast}
                   />
                 )
               })}

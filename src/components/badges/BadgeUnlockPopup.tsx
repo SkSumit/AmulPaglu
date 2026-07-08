@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X } from 'lucide-react'
+import { X, Share2 } from 'lucide-react'
 import confetti from 'canvas-confetti'
+import { useToast, ToastContainer } from '@/components/ui/Toast'
+import { shareContent, getBadgeShareData } from '@/lib/share'
 
 export interface UnlockedBadge {
   icon: string
@@ -48,12 +50,12 @@ export function BadgeUnlockPopup({ badges, onClose }: BadgeUnlockPopupProps) {
     return () => clearTimeout(t)
   }, [currentIdx])
 
-  // Auto-dismiss after 3.5s
-  useEffect(() => {
-    const t = setTimeout(handleNext, 3500)
-    return () => clearTimeout(t)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIdx])
+  const { toasts, addToast, dismiss } = useToast()
+
+  function handleShareBadge() {
+    const data = getBadgeShareData(current)
+    void shareContent(data, addToast)
+  }
 
   function handleNext() {
     if (exiting) return
@@ -135,24 +137,24 @@ export function BadgeUnlockPopup({ badges, onClose }: BadgeUnlockPopupProps) {
           </p>
         )}
 
-        {/* CTA */}
-        <button
-          onClick={handleNext}
-          className="mt-6 w-full rounded-xl bg-amul-red px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amul-red-dark"
-        >
-          {isLast ? 'Awesome! 🎉' : `Next (${currentIdx + 1}/${badges.length})`}
-        </button>
-
-        {/* Auto-dismiss bar */}
-        <div className="mt-3 h-0.5 w-full overflow-hidden rounded-full bg-[hsl(var(--muted))]">
-          {visible && !exiting && (
-            <div
-              className="h-full rounded-full bg-amul-red/50"
-              style={{ animation: 'shrink-width 3.5s linear forwards', width: '100%' }}
-            />
-          )}
+        {/* CTA Actions */}
+        <div className="mt-6 flex gap-2.5">
+          <button
+            onClick={handleShareBadge}
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 py-2.5 text-sm font-semibold text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors"
+          >
+            <Share2 size={14} className="text-[hsl(var(--muted-foreground))]" />
+            Share
+          </button>
+          <button
+            onClick={handleNext}
+            className="flex-1 rounded-xl bg-amul-red px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amul-red-dark"
+          >
+            {isLast ? 'Awesome! 🎉' : `Next (${currentIdx + 1}/${badges.length})`}
+          </button>
         </div>
       </div>
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>,
     document.body
   )

@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { CheckCircle2, Plus, BookmarkCheck, Trash2, Star, Users, User } from 'lucide-react'
+import { CheckCircle2, Plus, BookmarkCheck, Trash2, Star, Users, User, Share2 } from 'lucide-react'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import type { UserProductStatus, ProductWithSubmitter } from '@/types'
 import { ProductImage } from './ProductImage'
+import { shareContent, getProductShareData } from '@/lib/share'
 
 // ── Rarity maps ──────────────────────────────────────
 const RARITY_PILL: Record<string, string> = {
@@ -32,6 +33,7 @@ export interface ProductCardProps {
   onAddToList: () => void
   onMarkAsTried: () => void
   onRemoveFromList?: () => void
+  addToast?: (msg: string, type: 'success' | 'error') => void
 }
 
 // â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -44,6 +46,7 @@ export function ProductCard({
   onAddToList,
   onMarkAsTried,
   onRemoveFromList,
+  addToast,
 }: ProductCardProps) {
   const pts = product.points ?? 0
   const rarity = product.rarity_label
@@ -58,6 +61,11 @@ export function ProductCard({
     setJustAdded(true)
     setTimeout(() => setJustAdded(false), 300)
     onAddToList()
+  }
+
+  function handleShare() {
+    const data = getProductShareData(product)
+    void shareContent(data, addToast || (() => {}))
   }
 
   return (
@@ -191,16 +199,25 @@ export function ProductCard({
                     : 'Tried!'}
                 </span>
               </div>
-              {onRemoveFromList && (
+              <div className="flex items-center gap-1 shrink-0">
                 <button
-                  onClick={onRemoveFromList}
-                  disabled={isLoading}
-                  aria-label="Remove from list"
-                  className="shrink-0 rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 disabled:opacity-50"
+                  onClick={handleShare}
+                  className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                  aria-label="Share product"
                 >
-                  <Trash2 size={13} />
+                  <Share2 size={13} />
                 </button>
-              )}
+                {onRemoveFromList && (
+                  <button
+                    onClick={onRemoveFromList}
+                    disabled={isLoading}
+                    aria-label="Remove from list"
+                    className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 disabled:opacity-50"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
             </div>
           ) : userStatus === 'want_to_try' ? (
             <div className="flex gap-2">
@@ -224,6 +241,13 @@ export function ProductCard({
                   : <CheckCircle2 size={13} />}
                 {isLoading && loadingAction === 'tried' ? 'Savingâ€¦' : 'Tried it!'}
               </button>
+              <button
+                onClick={handleShare}
+                className="shrink-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors"
+                aria-label="Share product"
+              >
+                <Share2 size={14} />
+              </button>
             </div>
           ) : (
             <div className="flex gap-2">
@@ -246,6 +270,13 @@ export function ProductCard({
                   ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   : <CheckCircle2 size={13} />}
                 {isLoading && loadingAction === 'tried' ? 'Savingâ€¦' : 'Tried it!'}
+              </button>
+              <button
+                onClick={handleShare}
+                className="shrink-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors"
+                aria-label="Share product"
+              >
+                <Share2 size={14} />
               </button>
             </div>
           )}

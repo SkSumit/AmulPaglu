@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Trophy, BookmarkCheck, CheckCircle2 } from 'lucide-react'
+import { Trophy, CheckCircle2, Share2, BookmarkCheck } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTier } from '@/types'
@@ -8,6 +8,8 @@ import type { Profile, Product, Badge } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import { BadgesSection, type EarnedBadgeInfo } from '@/components/badges/BadgesSection'
 import { ProductImage } from '@/components/products/ProductImage'
+import { shareContent, getProfileShareData } from '@/lib/share'
+import { useToast, ToastContainer } from '@/components/ui/Toast'
 import logo from '@/assets/logo.png'
 
 interface TriedEntry {
@@ -30,6 +32,7 @@ function Skeleton({ className }: { className?: string }) {
 export default function ProfilePage() {
   const { username } = useParams<{ username: string }>()
   const { user, isLoading: authLoading } = useAuth()
+  const { toasts, addToast, dismiss } = useToast()
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [tried, setTried] = useState<TriedEntry[]>([])
@@ -127,6 +130,17 @@ export default function ProfilePage() {
   const tier = getTier(profile?.total_points ?? 0)
   const pts = profile?.total_points ?? 0
 
+  function handleShareProfile() {
+    if (!profile) return
+    const shareData = getProfileShareData(
+      profile.username,
+      pts,
+      tier.label,
+      tried.length
+    )
+    void shareContent(shareData, addToast)
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 page-transition">
 
@@ -161,6 +175,14 @@ export default function ProfilePage() {
                   </span>
                 )}
                 {isOwnProfile && <span className="text-sm font-normal text-[hsl(var(--muted-foreground))] shrink-0">(you)</span>}
+                <button
+                  onClick={handleShareProfile}
+                  className="rounded-lg p-1 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors shrink-0 animate-fade-in"
+                  title="Share Profile"
+                  aria-label="Share profile"
+                >
+                  <Share2 size={16} />
+                </button>
               </h1>
               <div className="mt-1 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <span className="rounded-full bg-amul-red/10 px-2.5 py-1 text-xs font-semibold text-amul-red">
@@ -292,6 +314,7 @@ export default function ProfilePage() {
           maxVisible={isOwnProfile ? 99 : 8}
         />
       </div>
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   )
 }
