@@ -8,6 +8,9 @@ export type { BadgeConditionJson as BadgeCondition } from './database'
 // ── Row types (what you get back from Supabase) ────────────
 export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Product = Database['public']['Tables']['products']['Row']
+export interface ProductWithSubmitter extends Product {
+  profiles?: { username: string } | null
+}
 export type UserProduct = Database['public']['Tables']['user_products']['Row']
 export type Suggestion = Database['public']['Tables']['suggestions']['Row']
 export type ScrapeLog = Database['public']['Tables']['scrape_logs']['Row']

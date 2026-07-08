@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { CheckCircle2, Plus, BookmarkCheck, Trash2, Star } from 'lucide-react'
+import { CheckCircle2, Plus, BookmarkCheck, Trash2, Star, Users, User } from 'lucide-react'
 import { cn, getDisplayProductName } from '@/lib/utils'
-import type { Product, UserProductStatus } from '@/types'
+import type { UserProductStatus, ProductWithSubmitter } from '@/types'
 import { ProductImage } from './ProductImage'
 
 // ── Rarity maps ──────────────────────────────────────
@@ -24,7 +24,7 @@ const RARITY_PILL: Record<string, string> = {
 
 // ── Props ──────────────────────────────────────────
 export interface ProductCardProps {
-  product: Product
+  product: ProductWithSubmitter
   userStatus: UserProductStatus | null
   triedAt?: string | null
   isLoading?: boolean
@@ -148,8 +148,39 @@ export function ProductCard({
           </span>
         </div>
 
+        {/* Card Metadata */}
+        <div className="mt-auto mb-3 flex flex-col gap-1.5 text-[11px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))]/50 pt-2.5">
+          <div className="flex items-center gap-1.5">
+            <Users size={12} className="text-[hsl(var(--muted-foreground))]" />
+            <span>
+              {product.tried_count && product.tried_count > 0 ? (
+                <>
+                  Tried by{' '}
+                  <span className="font-semibold text-[hsl(var(--foreground))]">
+                    {product.tried_count}
+                  </span>{' '}
+                  user{product.tried_count !== 1 ? 's' : ''}
+                </>
+              ) : (
+                <span className="italic text-amul-red font-medium">Be the first to try!</span>
+              )}
+            </span>
+          </div>
+          {product.profiles?.username && (
+            <div className="flex items-center gap-1.5">
+              <User size={12} className="text-[hsl(var(--muted-foreground))]" />
+              <span>
+                Added by{' '}
+                <span className="font-semibold text-[hsl(var(--foreground))] text-amul-red">
+                  @{product.profiles.username}
+                </span>
+              </span>
+            </div>
+          )}
+        </div>
+
         {/* Actions */}
-        <div className="mt-auto">
+        <div>
           {isTried ? (
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 min-w-0">

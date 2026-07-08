@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast, ToastContainer } from '@/components/ui/Toast'
 import { ProductCard } from '@/components/products/ProductCard'
-import type { Product, UserProductStatus } from '@/types'
+import type { UserProductStatus, ProductWithSubmitter } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import { checkAndAwardBadges, revokeBadgesIfNeeded } from '@/lib/badges'
 import { BadgeUnlockPopup, type UnlockedBadge } from '@/components/badges/BadgeUnlockPopup'
@@ -16,7 +16,7 @@ interface ListEntry {
   status: UserProductStatus
   tried_at: string | null
   notes: string | null
-  product: Product
+  product: ProductWithSubmitter
 }
 type SortBy = 'newest' | 'points_desc' | 'name_asc' | 'tried_asc'
 type Tab    = 'want_to_try' | 'tried'
@@ -81,7 +81,8 @@ export default function MyList() {
           products (
             id, name, category, description, image_url, points,
             rarity_label, availability, is_discontinued, source_url,
-            status, submitted_by, created_at, updated_at
+            status, submitted_by, created_at, updated_at, tried_count,
+            profiles:submitted_by(username)
           )
         `)
         .eq('user_id', user.id)
@@ -96,7 +97,7 @@ export default function MyList() {
           status:        row.status as UserProductStatus,
           tried_at:      row.tried_at,
           notes:         row.notes,
-          product:       row.products as unknown as Product,
+          product:       row.products as unknown as ProductWithSubmitter,
         }))
 
       setEntries(list)

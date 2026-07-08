@@ -69,7 +69,6 @@ describe('Login Page', () => {
 
     expect(screen.getByText('Welcome back')).toBeInTheDocument()
     const emailInput = screen.getByLabelText('Email')
-    const passwordInput = screen.getByLabelText('Password')
     const submitBtn = screen.getByRole('button', { name: 'Sign in' })
 
     // Submitting empty form shows validation error

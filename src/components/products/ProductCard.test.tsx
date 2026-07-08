@@ -1,24 +1,30 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
 import { ProductCard } from './ProductCard'
-import type { Product } from '@/types'
+import type { ProductWithSubmitter } from '@/types'
 
 // Mock ProductImage
 vi.mock('./ProductImage', () => ({
   ProductImage: () => <div data-testid="mocked-product-image">Product Image</div>
 }))
 
-const mockProduct: Product = {
+const mockProduct = {
   id: 'p-1',
   name: 'Amul Butter | 500g Pack',
   points: 4,
   category: 'Butter',
   rarity_label: 'Legendary',
   image_url: 'https://example.com/butter.png',
-  approved: true,
   is_discontinued: false,
   created_at: '',
-}
+  updated_at: '',
+  status: 'approved',
+  tried_count: 0,
+  submitted_by: null,
+  availability: 'Pan India',
+  description: '',
+  source_url: '',
+} as ProductWithSubmitter
 
 describe('ProductCard Component', () => {
   it('renders product details correctly', () => {
@@ -111,5 +117,50 @@ describe('ProductCard Component', () => {
     })
 
     expect(onMarkAsTriedMock).toHaveBeenCalled()
+  })
+
+  it('renders global popularity and submitter info when available', () => {
+    const customMockProduct = {
+      ...mockProduct,
+      tried_count: 12,
+      profiles: {
+        username: 'dairy_king',
+      },
+    } as unknown as ProductWithSubmitter
+
+    render(
+      <ProductCard
+        product={customMockProduct}
+        userStatus={null}
+        onAddToList={vi.fn()}
+        onMarkAsTried={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText(/Tried by/)).toBeInTheDocument()
+    expect(screen.getByText('12')).toBeInTheDocument()
+    expect(screen.getByText(/user/)).toBeInTheDocument()
+    expect(screen.getByText(/Added by/)).toBeInTheDocument()
+    expect(screen.getByText('@dairy_king')).toBeInTheDocument()
+  })
+
+  it('renders "Be the first to try!" when tried_count is 0 or null', () => {
+    const customMockProduct = {
+      ...mockProduct,
+      tried_count: 0,
+      profiles: null,
+    } as unknown as ProductWithSubmitter
+
+    render(
+      <ProductCard
+        product={customMockProduct}
+        userStatus={null}
+        onAddToList={vi.fn()}
+        onMarkAsTried={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText('Be the first to try!')).toBeInTheDocument()
+    expect(screen.queryByText(/Added by/)).not.toBeInTheDocument()
   })
 })

@@ -4,7 +4,6 @@ import MyList from './MyList'
 import { useAuth } from '@/contexts/AuthContext'
 import { mockSupabaseClient } from '@/test/setup'
 import { MemoryRouter } from 'react-router-dom'
-import userEvent from '@testing-library/user-event'
 
 // Mock useAuth
 vi.mock('@/contexts/AuthContext', () => ({

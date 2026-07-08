@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast, ToastContainer } from '@/components/ui/Toast'
 import { ProductCard } from '@/components/products/ProductCard'
-import type { Product, UserProductStatus } from '@/types'
+import type { Product, UserProductStatus, ProductWithSubmitter } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import { checkAndAwardBadges, revokeBadgesIfNeeded } from '@/lib/badges'
 import { BadgeUnlockPopup, type UnlockedBadge } from '@/components/badges/BadgeUnlockPopup'
@@ -25,7 +25,7 @@ export default function Explore() {
   const { toasts, addToast, dismiss } = useToast()
 
   // Data
-  const [products,       setProducts]       = useState<Product[]>([])
+  const [products,       setProducts]       = useState<ProductWithSubmitter[]>([])
   const [userProductMap, setUserProductMap] = useState<UPMap>({})
   const [loading,        setLoading]        = useState(true)
   const [loadError,      setLoadError]      = useState<string | null>(null)
@@ -93,7 +93,7 @@ export default function Explore() {
       ] = await Promise.all([
         supabase
           .from('products')
-          .select('*')
+          .select('*, profiles:submitted_by(username)')
           .eq('status', 'approved')
           .order('created_at', { ascending: false }),
         supabase
@@ -105,7 +105,7 @@ export default function Explore() {
       if (prodErr) throw new Error(prodErr.message)
       if (upErr)   throw new Error(upErr.message)
 
-      setProducts(prods ?? [])
+      setProducts((prods as unknown as ProductWithSubmitter[]) ?? [])
       const map: UPMap = {}
       for (const up of ups ?? []) {
         map[up.product_id] = {

@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './AuthContext'
 import { mockSupabaseClient, authCallbacks, mockSession, mockProfile } from '@/test/setup'
 
 function AuthConsumer() {
-  const { session, user, profile, isLoading, isAdmin, signOut, refreshProfile, ensureSession } = useAuth()
+  const { user, profile, isLoading, isAdmin, signOut, refreshProfile, ensureSession } = useAuth()
   return (
     <div>
       <span data-testid="loading">{isLoading ? 'loading' : 'done'}</span>
