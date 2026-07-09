@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { logger } from './logger'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -25,12 +26,12 @@ export async function refreshSession() {
   try {
     const { data: { session }, error } = await supabase.auth.refreshSession()
     if (error) {
-      console.warn('Session refresh failed:', error.message)
+      logger.warn('Session refresh failed:', error.message)
       return false
     }
     return !!session
   } catch (err) {
-    console.warn('Session refresh error:', err)
+    logger.warn('Session refresh error:', err)
     return false
   }
 }

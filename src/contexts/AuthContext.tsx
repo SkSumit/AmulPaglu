@@ -9,6 +9,7 @@ import {
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import type { Profile } from '@/types'
+import { logger } from '@/lib/logger'
 
 // ── Types ──────────────────────────────────────────────────
 interface AuthContextValue {
@@ -62,13 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (insertErr) {
-        console.error('Error creating profile:', insertErr.message)
+        logger.error('Error creating profile:', insertErr.message)
         return null
       }
       return created
     }
 
-    console.error('Error fetching profile:', error.message)
+    logger.error('Error fetching profile:', error.message)
     return null
   }
 
@@ -113,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // If token has expired or is close to expiring (within 15 seconds), refresh it!
     if (expiresAt - now < 15) {
       try {
-        console.warn('Session close to expiry or expired, executing timeout-protected refresh...')
+        logger.warn('Session close to expiry or expired, executing timeout-protected refresh...')
         const s = await safeRefreshSession()
         if (s) {
           setSession(s)
@@ -121,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return false
       } catch (err) {
-        console.warn('Session verification/refresh failed:', err)
+        logger.warn('Session verification/refresh failed:', err)
         await signOut()
         return false
       }
@@ -171,13 +172,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible' && mounted) {
         try {
-          console.warn('Tab visible, forcing supabase.auth.refreshSession() via safeRefreshSession()...')
+          logger.warn('Tab visible, forcing supabase.auth.refreshSession() via safeRefreshSession()...')
           const s = await safeRefreshSession()
           if (s && mounted) {
             setSession(s)
           }
         } catch (err) {
-          console.warn('Tab visibility session refresh failed:', err)
+          logger.warn('Tab visibility session refresh failed:', err)
         }
       }
     }
@@ -213,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         })
         .catch((err) => {
-          console.error('Error fetching profile in useEffect:', err)
+          logger.error('Error fetching profile in useEffect:', err)
         })
         .finally(() => {
           if (mounted) {
@@ -233,7 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await supabase.auth.signOut()
     } catch (err) {
-      console.warn('signOut network error (ignored):', err)
+      logger.warn('signOut network error (ignored):', err)
     } finally {
       setProfile(null)
       setSession(null)

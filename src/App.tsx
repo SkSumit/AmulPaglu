@@ -6,6 +6,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { Layout } from "@/components/layout/Layout";
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 // Lazy Pages
 const Landing = React.lazy(() => import("@/pages/Landing"));
@@ -37,6 +38,7 @@ function PageLoader() {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
@@ -114,5 +116,6 @@ export default function App() {
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
+    </ErrorBoundary>
   );
 }

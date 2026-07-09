@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { friendlyError } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import logo from '@/assets/logo.png'
+import { logger } from '@/lib/logger'
 
 // Username rules: 3–20 chars, letters/numbers/underscores only
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
@@ -109,7 +110,7 @@ export default function Signup() {
         return
       }
       // Any other error (RLS, network, etc.) — AuthContext will retry via SIGNED_IN
-      console.warn('Profile upsert timing issue during signup (AuthContext will fix):', profileError.message)
+      logger.warn('Profile upsert timing issue during signup (AuthContext will fix):', profileError.message)
     }
 
     navigate('/dashboard', { replace: true })

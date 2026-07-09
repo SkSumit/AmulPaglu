@@ -9,6 +9,7 @@ import type { Product, UserProductStatus, ProductWithSubmitter } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import { checkAndAwardBadges, revokeBadgesIfNeeded } from '@/lib/badges'
 import { BadgeUnlockPopup, type UnlockedBadge } from '@/components/badges/BadgeUnlockPopup'
+import { logger } from '@/lib/logger'
 
 // ── Local types ────────────────────────────────────────────
 type UPEntry = { id: string; status: UserProductStatus; tried_at: string | null }
@@ -74,7 +75,7 @@ export default function Explore() {
     if (authLoading || !user) return
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.warn('Explore visible, re-fetching products...')
+        logger.warn('Explore visible, re-fetching products...')
         void loadData()
       }
     }

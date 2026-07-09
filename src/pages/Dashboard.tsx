@@ -9,6 +9,8 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { BadgesSection, type EarnedBadgeInfo } from '@/components/badges/BadgesSection'
 import { ProductImage } from '@/components/products/ProductImage'
 import type { Badge } from '@/types'
+import { logger } from '@/lib/logger'
+import { RARITY_PILL } from '@/lib/constants'
 
 // ── Types ──────────────────────────────────────────────────
 interface DashboardStats {
@@ -95,14 +97,7 @@ function ProgressRing({
 
 
 
-// ── Rarity pill colors ─────────────────────────────────────
-const RARITY_PILL: Record<string, string> = {
-  Common: 'bg-gray-100   text-gray-600   dark:bg-gray-800 dark:text-gray-400',
-  Uncommon: 'bg-green-100  text-green-700  dark:bg-green-900/40 dark:text-green-400',
-  Rare: 'bg-blue-100   text-blue-700   dark:bg-blue-900/40 dark:text-blue-400',
-  Epic: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
-  Legendary: 'bg-amber-100  text-amber-700  dark:bg-amber-900/40 dark:text-amber-400',
-}
+
 
 // ── Main component ─────────────────────────────────────────
 export default function Dashboard() {
@@ -132,7 +127,7 @@ export default function Dashboard() {
     if (authLoading || !user) return
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.warn('Dashboard visible, re-fetching stats/badges...')
+        logger.warn('Dashboard visible, re-fetching stats/badges...')
         void loadDashboard()
         void loadBadges()
       }
@@ -153,7 +148,7 @@ export default function Dashboard() {
       setAllBadges((allB ?? []) as Badge[])
       setEarnedBadges((earnedB ?? []).map((e) => ({ badge_slug: e.badge_slug, earned_at: e.earned_at })))
     } catch (err) {
-      console.error('Badges load error:', err)
+      logger.error('Badges load error:', err)
     } finally {
       setBadgesLoading(false)
     }
@@ -170,7 +165,7 @@ export default function Dashboard() {
         { count: triedCount },
         { count: wantCount },
         { data: activityData },
-        { data: allTriedPoints },
+        { data: profilePointsData },
       ] = await Promise.all([
         // Total approved products
         supabase
@@ -208,23 +203,21 @@ export default function Dashboard() {
           .order('tried_at', { ascending: false })
           .limit(5),
 
-        // All tried products with their current points (for live total)
+        // Fetch user's current points from profiles
         supabase
-          .from('user_products')
-          .select('products(points)')
-          .eq('user_id', user.id)
-          .eq('status', 'tried'),
+          .from('profiles')
+          .select('total_points')
+          .eq('id', user.id)
+          .single(),
       ])
 
-      // Calculate live total points from current product values
-      const livePoints = ((allTriedPoints ?? []) as unknown as { products: { points: number | null } | null }[])
-        .reduce((sum, row) => sum + (row.products?.points ?? 0), 0)
+      const currentPoints = profilePointsData?.total_points ?? 0
 
       // Rank: count users with strictly more points
       const { count: rankCount } = await supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
-        .gt('total_points', livePoints)
+        .gt('total_points', currentPoints)
 
       setStats({
         totalProducts: totalProducts ?? 0,
@@ -234,14 +227,9 @@ export default function Dashboard() {
       })
 
       setActivity((activityData as unknown as RecentActivity[]) ?? [])
-
-      // Sync profile total_points if it drifted (e.g. admin changed product points)
-      if (livePoints !== (profile?.total_points ?? -1)) {
-        await supabase.from('profiles').update({ total_points: livePoints }).eq('id', user.id)
-      }
       await refreshProfile()
     } catch (err) {
-      console.error('Dashboard load error:', err)
+      logger.error('Dashboard load error:', err)
     } finally {
       setLoading(false)
     }

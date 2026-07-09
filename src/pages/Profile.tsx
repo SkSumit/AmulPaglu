@@ -12,6 +12,7 @@ import { shareContent, getProfileShareData } from '@/lib/share'
 import { useToast, ToastContainer } from '@/components/ui/Toast'
 import { Skeleton } from '@/components/ui/Skeleton'
 import logo from '@/assets/logo.png'
+import { logger } from '@/lib/logger'
 
 interface TriedEntry {
   tried_at: string | null
@@ -107,7 +108,7 @@ export default function ProfilePage() {
         }
       })()
     } catch (err) {
-      console.error('Profile load error:', err)
+      logger.error('Profile load error:', err)
     } finally {
       setLoading(false)
     }

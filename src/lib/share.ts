@@ -1,4 +1,5 @@
 import { getDisplayProductName } from './utils'
+import { logger } from './logger'
 
 interface ShareOptions {
   title: string
@@ -24,7 +25,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     document.body.removeChild(textArea)
     return successful
   } catch (err) {
-    console.error('Clipboard copy failed:', err)
+    logger.error('Clipboard copy failed:', err)
     return false
   }
 }
@@ -46,7 +47,7 @@ export async function shareContent(
       return
     } catch (err) {
       if (err instanceof Error && err.name !== 'AbortError') {
-        console.error('Web share failed:', err)
+        logger.error('Web share failed:', err)
       } else {
         // User cancelled native share, do nothing
         return

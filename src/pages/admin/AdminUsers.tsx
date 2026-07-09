@@ -206,7 +206,7 @@ export default function AdminUsers() {
 
   async function deleteUser(profile: Profile) {
     setDeleting(profile.id)
-    const { error } = await supabase.from('profiles').delete().eq('id', profile.id)
+    const { error } = await (supabase as any).rpc('admin_delete_user', { target_id: profile.id })
     setDeleting(null)
     if (error) { addToast(error.message, 'error'); return }
     setUsers((u) => u.filter((p) => p.id !== profile.id))
@@ -217,13 +217,22 @@ export default function AdminUsers() {
     setBulkDeleting(true)
     const ids = Array.from(selected).filter((id) => id !== me?.id)
     if (ids.length === 0) { setBulkDeleting(false); return }
-    const { error } = await supabase.from('profiles').delete().in('id', ids)
+    const results = await Promise.allSettled(
+      ids.map((id) => (supabase as any).rpc('admin_delete_user', { target_id: id }))
+    )
+    const failed = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && r.value.error))
     setBulkDeleting(false)
     setBulkDeleteOpen(false)
-    if (error) { addToast(error.message, 'error'); return }
-    setUsers((u) => u.filter((p) => !ids.includes(p.id)))
+    if (failed.length > 0) {
+      addToast(`${failed.length} user(s) could not be deleted.`, 'error')
+    }
+    const successCount = ids.length - failed.length
+    if (successCount > 0) {
+      setUsers((u) => u.filter((p) => !ids.includes(p.id) || failed.some((f) => f.status === 'fulfilled' && 'value' in f)))
+      addToast(`${successCount} user${successCount !== 1 ? 's' : ''} deleted.`, 'success')
+    }
     setSelected(new Set())
-    addToast(`${ids.length} user${ids.length !== 1 ? 's' : ''} deleted.`, 'success')
+    await load()
   }
 
   function toggleSelect(id: string) {

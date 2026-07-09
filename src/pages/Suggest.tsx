@@ -91,6 +91,15 @@ export default function Suggest() {
     setErrors({})
     setSubmitting(true)
     try {
+      const { data: withinLimit, error: limitErr } = await (supabase as any).rpc('check_suggestion_rate_limit', {
+        p_user_id: user!.id,
+      })
+      if (limitErr) throw limitErr
+      if (!withinLimit) {
+        addToast("🥛 Slow down! You've reached your daily suggestion limit (max 10 per 24h).", 'error')
+        return
+      }
+
       const { error } = await supabase.from('suggestions').insert({
         submitted_by: user!.id,
         name:         name.trim(),

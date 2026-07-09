@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
   Star,
@@ -23,16 +23,8 @@ import logo from "@/assets/logo.png";
 import tiersBg from "@/assets/tiers_bg.png";
 import leaderboardBg from "@/assets/leaderboard_bg.png";
 import badgesBg from "@/assets/badges_bg.png";
-
-const RARITY_PILL: Record<string, string> = {
-  Common: "bg-gray-100   text-gray-600   dark:bg-gray-800 dark:text-gray-400",
-  Uncommon:
-    "bg-green-100  text-green-700  dark:bg-green-900/40 dark:text-green-400",
-  Rare: "bg-blue-100   text-blue-700   dark:bg-blue-900/40 dark:text-blue-400",
-  Epic: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400",
-  Legendary:
-    "bg-amber-100  text-amber-700  dark:bg-amber-900/40 dark:text-amber-400",
-};
+import { RARITY_PILL } from "@/lib/constants";
+import { CountUp } from "@/components/ui/CountUp";
 
 // FEATURES list for homepage cards
 
@@ -69,30 +61,6 @@ const FEATURES = [
   },
 ];
 
-// ── Count-up stat ──────────────────────────────────────────
-function CountUpStat({
-  to,
-  duration = 1200,
-}: {
-  to: number;
-  duration?: number;
-}) {
-  const [val, setVal] = useState(0);
-  const started = useRef(false);
-  useEffect(() => {
-    if (started.current || to === 0) return;
-    started.current = true;
-    const start = performance.now();
-    function tick(now: number) {
-      const t = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setVal(Math.round(eased * to));
-      if (t < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }, [to, duration]);
-  return <>{val}</>;
-}
 
 export default function Landing() {
   const { session, isLoading } = useAuth();
@@ -374,7 +342,7 @@ export default function Landing() {
                 <p className={`stat-number font-display text-2xl font-bold sm:text-3xl bg-gradient-to-r ${gradient} bg-clip-text text-transparent inline-block`}>
                   {value > 0 ? (
                     <>
-                      <CountUpStat to={value} />
+                      <CountUp to={value} />
                       {suffix}
                     </>
                   ) : (

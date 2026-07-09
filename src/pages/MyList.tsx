@@ -9,6 +9,7 @@ import type { UserProductStatus, ProductWithSubmitter } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import { checkAndAwardBadges, revokeBadgesIfNeeded } from '@/lib/badges'
 import { BadgeUnlockPopup, type UnlockedBadge } from '@/components/badges/BadgeUnlockPopup'
+import { logger } from '@/lib/logger'
 
 // ── Local types ────────────────────────────────────────────
 interface ListEntry {
@@ -58,7 +59,7 @@ export default function MyList() {
     if (authLoading || !user) return
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.warn('MyList visible, re-fetching list...')
+        logger.warn('MyList visible, re-fetching list...')
         void loadData()
       }
     }

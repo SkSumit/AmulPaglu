@@ -4,6 +4,7 @@ import { Package, Users, Lightbulb, CheckCircle2, Clock, XCircle, TrendingUp } f
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { logger } from '@/lib/logger'
 
 interface OverviewStats {
   totalProducts: number
@@ -76,7 +77,7 @@ export default function AdminOverview() {
         rejectedSuggestions: rejectedSuggestions ?? 0,
       })
     } catch (err) {
-      console.error(err)
+      logger.error(err)
     } finally {
       setLoading(false)
     }

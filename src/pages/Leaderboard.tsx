@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Trophy, Medal, Crown } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -6,6 +6,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getTier } from '@/types'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { CountUp } from '@/components/ui/CountUp'
+import { logger } from '@/lib/logger'
 
 interface LeaderEntry {
   id: string
@@ -39,25 +41,7 @@ function TierPill({ emoji, label, tierLabel }: { emoji: string; label: string; t
   )
 }
 
-// ── Count-up number ────────────────────────────────────────
-function CountUp({ to }: { to: number }) {
-  const [val, setVal] = useState(0)
-  const started = useRef(false)
-  useEffect(() => {
-    if (started.current) return
-    started.current = true
-    const dur = 1200
-    const start = performance.now()
-    function tick(now: number) {
-      const t = Math.min((now - start) / dur, 1)
-      const eased = 1 - Math.pow(1 - t, 3)
-      setVal(Math.round(eased * to))
-      if (t < 1) requestAnimationFrame(tick)
-    }
-    requestAnimationFrame(tick)
-  }, [to])
-  return <>{val}</>
-}
+
 
 export default function Leaderboard() {
   const { user, isLoading: authLoading } = useAuth()
@@ -77,34 +61,21 @@ export default function Leaderboard() {
     setLoading(true)
     try {
       const [{ data, error }, { count: userCount }] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id, username, avatar_url, total_points, is_admin')
-          .order('total_points', { ascending: false })
-          .limit(PAGE_SIZE),
+        (supabase as any).rpc('get_leaderboard', { max_rows: PAGE_SIZE }),
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
       ])
       setTotalUsers(userCount ?? null)
 
       if (error) throw error
 
-      // Fetch tried counts in parallel for each user
-      const entries = data ?? []
-      const triedCounts = await Promise.all(
-        entries.map((e) =>
-          supabase
-            .from('user_products')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', e.id)
-            .eq('status', 'tried')
-            .then(({ count }) => count ?? 0)
-        )
-      )
-
-      const rows: LeaderEntry[] = entries.map((e, i) => ({
-        ...e,
-        tried_count: triedCounts[i],
-      })) as LeaderEntry[]
+      const rows: LeaderEntry[] = (data ?? []).map((e: any) => ({
+        id: e.id,
+        username: e.username,
+        avatar_url: e.avatar_url,
+        total_points: e.total_points,
+        is_admin: e.is_admin,
+        tried_count: Number(e.tried_count ?? 0),
+      }))
 
       setEntries(rows)
 
@@ -132,7 +103,7 @@ export default function Leaderboard() {
         }
       }
     } catch (err) {
-      console.error('Leaderboard load error:', err)
+      logger.error('Leaderboard load error:', err)
     } finally {
       setLoading(false)
     }
