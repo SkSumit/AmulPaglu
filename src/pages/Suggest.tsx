@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast, ToastContainer } from '@/components/ui/Toast'
 import type { Suggestion } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 const CATEGORIES = [
   'Dairy', 'Ice Cream', 'Cheese', 'Butter', 'Beverages',
@@ -15,10 +16,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
   pending:  { label: 'Under review', color: 'bg-amber-100  text-amber-700  dark:bg-amber-900/30 dark:text-amber-400',  icon: Clock        },
   approved: { label: 'Approved',     color: 'bg-green-100  text-green-700  dark:bg-green-900/30 dark:text-green-400',  icon: CheckCircle2 },
   rejected: { label: 'Rejected',     color: 'bg-red-100    text-red-600    dark:bg-red-900/30   dark:text-red-400',    icon: XCircle      },
-}
-
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-lg bg-[hsl(var(--muted))]', className)} />
 }
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {

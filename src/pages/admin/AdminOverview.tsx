@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Package, Users, Lightbulb, CheckCircle2, Clock, XCircle, TrendingUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 interface OverviewStats {
   totalProducts: number
@@ -15,9 +16,7 @@ interface OverviewStats {
   rejectedSuggestions: number
 }
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-lg bg-[hsl(var(--muted))]', className)} />
-}
+
 
 function StatCard({
   label, value, icon, sub, loading, highlight,

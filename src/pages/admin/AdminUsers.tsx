@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Shield, ShieldOff, Search, Trophy, Trash2, X, ChevronDown, CheckSquare, Square,
 } from 'lucide-react'
@@ -8,10 +8,9 @@ import { useToast, ToastContainer } from '@/components/ui/Toast'
 import { getTier } from '@/types'
 import type { Profile } from '@/types'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-lg bg-[hsl(var(--muted))]', className)} />
-}
+
 
 type FilterAdmin = 'all' | 'admins' | 'non-admins'
 

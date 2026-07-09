@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { CheckCircle2, Plus, BookmarkCheck, Trash2, Star, Users, User, Share2 } from 'lucide-react'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import type { UserProductStatus, ProductWithSubmitter } from '@/types'
@@ -37,7 +37,7 @@ export interface ProductCardProps {
 }
 
 // â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export function ProductCard({
+export const ProductCard = memo(function ProductCard({
   product,
   userStatus,
   triedAt,
@@ -284,5 +284,5 @@ export function ProductCard({
       </div>
     </div>
   )
-}
+})
 

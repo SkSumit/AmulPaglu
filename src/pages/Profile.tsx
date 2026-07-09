@@ -10,6 +10,7 @@ import { BadgesSection, type EarnedBadgeInfo } from '@/components/badges/BadgesS
 import { ProductImage } from '@/components/products/ProductImage'
 import { shareContent, getProfileShareData } from '@/lib/share'
 import { useToast, ToastContainer } from '@/components/ui/Toast'
+import { Skeleton } from '@/components/ui/Skeleton'
 import logo from '@/assets/logo.png'
 
 interface TriedEntry {
@@ -25,9 +26,7 @@ const RARITY_PILL: Record<string, string> = {
   Legendary: 'bg-amber-100  text-amber-700  dark:bg-amber-900/40 dark:text-amber-400',
 }
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-lg bg-[hsl(var(--muted))]', className)} />
-}
+
 
 export default function ProfilePage() {
   const { username } = useParams<{ username: string }>()

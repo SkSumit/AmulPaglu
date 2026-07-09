@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTier, TIERS } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { BadgesSection, type EarnedBadgeInfo } from '@/components/badges/BadgesSection'
 import { ProductImage } from '@/components/products/ProductImage'
 import type { Badge } from '@/types'
@@ -92,12 +93,7 @@ function ProgressRing({
   )
 }
 
-// ── Skeleton block ─────────────────────────────────────────
-function Skeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn('animate-pulse rounded-lg bg-[hsl(var(--muted))]', className)} />
-  )
-}
+
 
 // ── Rarity pill colors ─────────────────────────────────────
 const RARITY_PILL: Record<string, string> = {

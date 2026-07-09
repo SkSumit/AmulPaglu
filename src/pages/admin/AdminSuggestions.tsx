@@ -5,6 +5,7 @@ import { useToast, ToastContainer } from '@/components/ui/Toast'
 import type { Suggestion } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import { ProductImage } from '@/components/products/ProductImage'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 type Tab = 'pending' | 'approved' | 'rejected'
 
@@ -14,9 +15,7 @@ const TAB_CONFIG: Record<Tab, { label: string; color: string }> = {
   rejected: { label: 'Rejected', color: 'text-red-500'   },
 }
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-lg bg-[hsl(var(--muted))]', className)} />
-}
+
 
 export default function AdminSuggestions() {
   const { toasts, addToast, dismiss } = useToast()

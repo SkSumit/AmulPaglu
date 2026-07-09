@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTier } from '@/types'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 interface LeaderEntry {
   id: string
@@ -17,9 +18,7 @@ interface LeaderEntry {
 
 const PAGE_SIZE = 50
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-lg bg-[hsl(var(--muted))]', className)} />
-}
+
 
 // ── Tier gradient pill ─────────────────────────────────────
 function TierPill({ emoji, label, tierLabel }: { emoji: string; label: string; tierLabel: string }) {

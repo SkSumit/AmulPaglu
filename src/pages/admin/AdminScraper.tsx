@@ -4,10 +4,9 @@ import { supabase } from '@/lib/supabase'
 import { useToast, ToastContainer } from '@/components/ui/Toast'
 import type { ScrapeLog } from '@/types'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-lg bg-[hsl(var(--muted))]', className)} />
-}
+
 
 // Robust, zero-dependency CSV parser
 function parseCSV(text: string): Record<string, string>[] {

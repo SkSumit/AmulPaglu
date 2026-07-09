@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useToast, ToastContainer } from '@/components/ui/Toast'
 import type { Product } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { ProductImage } from '@/components/products/ProductImage'
 
 const RARITIES     = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary']
@@ -31,9 +32,7 @@ const EMPTY_FORM: ProductForm = {
   status: 'approved', is_discontinued: false,
 }
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-lg bg-[hsl(var(--muted))]', className)} />
-}
+
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (

@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig(async () => {
-  const plugins = [react()]
+  const plugins: any[] = [react()]
 
   // Only load Tailwind plugin when not running tests to prevent ESM loading issues in node
   if (!process.env.VITEST) {
@@ -13,6 +13,10 @@ export default defineConfig(async () => {
 
   return {
     plugins,
+    server: {
+      allowedHosts: true,
+      host: true,
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
@@ -23,5 +27,5 @@ export default defineConfig(async () => {
       environment: 'happy-dom',
       setupFiles: './src/test/setup.ts',
     },
-  }
+  } as any
 })
