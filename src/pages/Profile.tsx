@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Trophy, BookmarkCheck, CheckCircle2 } from 'lucide-react'
+import { Trophy, CheckCircle2, Share2, BookmarkCheck } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTier } from '@/types'
@@ -8,6 +8,11 @@ import type { Profile, Product, Badge } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import { BadgesSection, type EarnedBadgeInfo } from '@/components/badges/BadgesSection'
 import { ProductImage } from '@/components/products/ProductImage'
+import { shareContent, getProfileShareData } from '@/lib/share'
+import { useToast, ToastContainer } from '@/components/ui/Toast'
+import { Skeleton } from '@/components/ui/Skeleton'
+import logo from '@/assets/logo.png'
+import { logger } from '@/lib/logger'
 
 interface TriedEntry {
   tried_at: string | null
@@ -15,28 +20,27 @@ interface TriedEntry {
 }
 
 const RARITY_PILL: Record<string, string> = {
-  Common:    'bg-gray-100   text-gray-600   dark:bg-gray-800 dark:text-gray-400',
-  Uncommon:  'bg-green-100  text-green-700  dark:bg-green-900/40 dark:text-green-400',
-  Rare:      'bg-blue-100   text-blue-700   dark:bg-blue-900/40 dark:text-blue-400',
-  Epic:      'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
+  Common: 'bg-gray-100   text-gray-600   dark:bg-gray-800 dark:text-gray-400',
+  Uncommon: 'bg-green-100  text-green-700  dark:bg-green-900/40 dark:text-green-400',
+  Rare: 'bg-blue-100   text-blue-700   dark:bg-blue-900/40 dark:text-blue-400',
+  Epic: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
   Legendary: 'bg-amber-100  text-amber-700  dark:bg-amber-900/40 dark:text-amber-400',
 }
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-lg bg-[hsl(var(--muted))]', className)} />
-}
+
 
 export default function ProfilePage() {
   const { username } = useParams<{ username: string }>()
   const { user, isLoading: authLoading } = useAuth()
+  const { toasts, addToast, dismiss } = useToast()
 
-  const [profile,  setProfile]  = useState<Profile | null>(null)
-  const [tried,    setTried]    = useState<TriedEntry[]>([])
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [tried, setTried] = useState<TriedEntry[]>([])
   const [wantCount, setWantCount] = useState(0)
-  const [rank,     setRank]     = useState<number | null>(null)
-  const [loading,  setLoading]  = useState(true)
+  const [rank, setRank] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const [allBadges, setAllBadges]       = useState<Badge[]>([])
+  const [allBadges, setAllBadges] = useState<Badge[]>([])
   const [earnedBadges, setEarnedBadges] = useState<EarnedBadgeInfo[]>([])
   const [badgesLoading, setBadgesLoading] = useState(true)
 
@@ -104,7 +108,7 @@ export default function ProfilePage() {
         }
       })()
     } catch (err) {
-      console.error('Profile load error:', err)
+      logger.error('Profile load error:', err)
     } finally {
       setLoading(false)
     }
@@ -113,7 +117,7 @@ export default function ProfilePage() {
   if (!loading && notFound) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
-        <span className="text-5xl">🐄</span>
+        <img src={logo} alt="Amul Paglu Logo" className="h-20 w-20 object-contain animate-bounce" />
         <p className="font-semibold text-[hsl(var(--foreground))]">User not found</p>
         <p className="text-sm text-[hsl(var(--muted-foreground))]">No one goes by &ldquo;{username}&rdquo; here.</p>
         <Link to="/leaderboard" className="mt-2 rounded-xl bg-amul-red px-4 py-2 text-sm font-semibold text-white hover:bg-amul-red-dark">
@@ -123,8 +127,19 @@ export default function ProfilePage() {
     )
   }
 
-  const tier      = getTier(profile?.total_points ?? 0)
-  const pts       = profile?.total_points ?? 0
+  const tier = getTier(profile?.total_points ?? 0)
+  const pts = profile?.total_points ?? 0
+
+  function handleShareProfile() {
+    if (!profile) return
+    const shareData = getProfileShareData(
+      profile.username,
+      pts,
+      tier.label,
+      tried.length
+    )
+    void shareContent(shareData, addToast)
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 page-transition">
@@ -147,9 +162,27 @@ export default function ProfilePage() {
             </>
           ) : (
             <>
-              <h1 className="font-display text-2xl font-bold text-[hsl(var(--foreground))]">
-                {profile?.username}
-                {isOwnProfile && <span className="ml-2 text-sm font-normal text-[hsl(var(--muted-foreground))]">(you)</span>}
+              <h1 className="font-display text-2xl font-bold text-[hsl(var(--foreground))] flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <span>{profile?.username}</span>
+                {profile?.is_admin && (
+                  <span className="rounded-full bg-amul-red/5 border border-amul-red/20 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amul-red uppercase shrink-0">
+                    Creator
+                  </span>
+                )}
+                {profile?.username === 'blah_blah' && (
+                  <span className="rounded-full bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 px-2 py-0.5 text-[9px] font-bold tracking-wider text-blue-600 dark:text-blue-400 uppercase shrink-0">
+                    Amul Girl
+                  </span>
+                )}
+                {isOwnProfile && <span className="text-sm font-normal text-[hsl(var(--muted-foreground))] shrink-0">(you)</span>}
+                <button
+                  onClick={handleShareProfile}
+                  className="rounded-lg p-1 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors shrink-0 animate-fade-in"
+                  title="Share Profile"
+                  aria-label="Share profile"
+                >
+                  <Share2 size={16} />
+                </button>
               </h1>
               <div className="mt-1 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <span className="rounded-full bg-amul-red/10 px-2.5 py-1 text-xs font-semibold text-amul-red">
@@ -168,9 +201,9 @@ export default function ProfilePage() {
         {/* Stats row */}
         <div className="flex gap-6 text-center">
           {[
-            { label: 'Points',     value: loading ? '…' : pts.toString(),           icon: '⭐' },
-            { label: 'Tried',      value: loading ? '…' : tried.length.toString(),  icon: '✅' },
-            { label: 'Want to try', value: loading ? '…' : wantCount.toString(),    icon: '📌' },
+            { label: 'Points', value: loading ? '…' : pts.toString(), icon: '⭐' },
+            { label: 'Tried', value: loading ? '…' : tried.length.toString(), icon: '✅' },
+            { label: 'Want to try', value: loading ? '…' : wantCount.toString(), icon: '📌' },
           ].map(({ label, value, icon }) => (
             <div key={label}>
               <p className="font-display text-xl font-bold text-[hsl(var(--foreground))]">
@@ -203,7 +236,7 @@ export default function ProfilePage() {
           </p>
           {isOwnProfile && (
             <Link to="/explore" className="mt-3 rounded-xl bg-amul-red px-4 py-1.5 text-xs font-semibold text-white hover:bg-amul-red-dark">
-              Start exploring
+              Start Pagluing
             </Link>
           )}
         </div>
@@ -281,6 +314,7 @@ export default function ProfilePage() {
           maxVisible={isOwnProfile ? 99 : 8}
         />
       </div>
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   )
 }

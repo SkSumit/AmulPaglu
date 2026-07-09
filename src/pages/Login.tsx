@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { friendlyError } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 import { ForgotPassword } from "@/components/ui/ForgotPassword";
+import logo from "@/assets/logo.png";
 
 export default function Login() {
   const { session } = useAuth();
@@ -58,7 +59,7 @@ export default function Login() {
             to="/"
             className="inline-flex items-center gap-2 font-display font-bold text-amul-red text-2xl"
           >
-            <span className="text-4xl">🐄</span>
+            <img src={logo} alt="Amul Paglu Logo" className="h-12 w-12 object-contain" />
             <span>Amul Paglu</span>
           </Link>
           <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">

@@ -5,9 +5,12 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTier, TIERS } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { BadgesSection, type EarnedBadgeInfo } from '@/components/badges/BadgesSection'
 import { ProductImage } from '@/components/products/ProductImage'
 import type { Badge } from '@/types'
+import { logger } from '@/lib/logger'
+import { RARITY_PILL } from '@/lib/constants'
 
 // ── Types ──────────────────────────────────────────────────
 interface DashboardStats {
@@ -92,25 +95,13 @@ function ProgressRing({
   )
 }
 
-// ── Skeleton block ─────────────────────────────────────────
-function Skeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn('animate-pulse rounded-lg bg-[hsl(var(--muted))]', className)} />
-  )
-}
 
-// ── Rarity pill colors ─────────────────────────────────────
-const RARITY_PILL: Record<string, string> = {
-  Common:    'bg-gray-100   text-gray-600   dark:bg-gray-800 dark:text-gray-400',
-  Uncommon:  'bg-green-100  text-green-700  dark:bg-green-900/40 dark:text-green-400',
-  Rare:      'bg-blue-100   text-blue-700   dark:bg-blue-900/40 dark:text-blue-400',
-  Epic:      'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
-  Legendary: 'bg-amber-100  text-amber-700  dark:bg-amber-900/40 dark:text-amber-400',
-}
+
+
 
 // ── Main component ─────────────────────────────────────────
 export default function Dashboard() {
-  const { user, profile, isLoading: authLoading, refreshProfile } = useAuth()
+  const { user, profile, isLoading: authLoading, refreshProfile, ensureSession, isAdmin } = useAuth()
 
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [activity, setActivity] = useState<RecentActivity[]>([])
@@ -131,10 +122,25 @@ export default function Dashboard() {
     void loadBadges()
   }, [authLoading, user?.id])
 
+  // Re-fetch data on visibility change (wake-up fallback)
+  useEffect(() => {
+    if (authLoading || !user) return
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        logger.warn('Dashboard visible, re-fetching stats/badges...')
+        void loadDashboard()
+        void loadBadges()
+      }
+    }
+    window.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => window.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [authLoading, user?.id])
+
   async function loadBadges() {
     if (!user) return
     setBadgesLoading(true)
     try {
+      await ensureSession()
       const [{ data: allB }, { data: earnedB }] = await Promise.all([
         supabase.from('badges').select('*').order('created_at', { ascending: true }),
         supabase.from('user_badges').select('badge_slug, earned_at').eq('user_id', user.id),
@@ -142,7 +148,7 @@ export default function Dashboard() {
       setAllBadges((allB ?? []) as Badge[])
       setEarnedBadges((earnedB ?? []).map((e) => ({ badge_slug: e.badge_slug, earned_at: e.earned_at })))
     } catch (err) {
-      console.error('Badges load error:', err)
+      logger.error('Badges load error:', err)
     } finally {
       setBadgesLoading(false)
     }
@@ -152,38 +158,39 @@ export default function Dashboard() {
     if (!user) return
     setLoading(true)
     try {
-    // Run all queries in parallel
-    const [
-      { count: totalProducts },
-      { count: triedCount },
-      { count: wantCount },
-      { data: activityData },
-      { data: allTriedPoints },
-    ] = await Promise.all([
-      // Total approved products
-      supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'approved'),
+      await ensureSession()
+      // Run all queries in parallel
+      const [
+        { count: totalProducts },
+        { count: triedCount },
+        { count: wantCount },
+        { data: activityData },
+        { data: profilePointsData },
+      ] = await Promise.all([
+        // Total approved products
+        supabase
+          .from('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'approved'),
 
-      // User's tried count
-      supabase
-        .from('user_products')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'tried'),
+        // User's tried count
+        supabase
+          .from('user_products')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'tried'),
 
-      // User's want_to_try count
-      supabase
-        .from('user_products')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'want_to_try'),
+        // User's want_to_try count
+        supabase
+          .from('user_products')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'want_to_try'),
 
-      // Recent activity — last 5 tried products
-      supabase
-        .from('user_products')
-        .select(`
+        // Recent activity — last 5 tried products
+        supabase
+          .from('user_products')
+          .select(`
           id,
           tried_at,
           notes,
@@ -191,45 +198,38 @@ export default function Dashboard() {
             id, name, category, rarity_label, points, image_url
           )
         `)
-        .eq('user_id', user.id)
-        .eq('status', 'tried')
-        .order('tried_at', { ascending: false })
-        .limit(5),
+          .eq('user_id', user.id)
+          .eq('status', 'tried')
+          .order('tried_at', { ascending: false })
+          .limit(5),
 
-      // All tried products with their current points (for live total)
-      supabase
-        .from('user_products')
-        .select('products(points)')
-        .eq('user_id', user.id)
-        .eq('status', 'tried'),
-    ])
+        // Fetch user's current points from profiles
+        supabase
+          .from('profiles')
+          .select('total_points')
+          .eq('id', user.id)
+          .single(),
+      ])
 
-    // Calculate live total points from current product values
-    const livePoints = ((allTriedPoints ?? []) as unknown as { products: { points: number | null } | null }[])
-      .reduce((sum, row) => sum + (row.products?.points ?? 0), 0)
+      const currentPoints = profilePointsData?.total_points ?? 0
 
-    // Rank: count users with strictly more points
-    const { count: rankCount } = await supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true })
-      .gt('total_points', livePoints)
+      // Rank: count users with strictly more points
+      const { count: rankCount } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .gt('total_points', currentPoints)
 
-    setStats({
-      totalProducts: totalProducts ?? 0,
-      triedCount: triedCount ?? 0,
-      wantToTryCount: wantCount ?? 0,
-      rank: rankCount !== null ? rankCount + 1 : null,
-    })
+      setStats({
+        totalProducts: totalProducts ?? 0,
+        triedCount: triedCount ?? 0,
+        wantToTryCount: wantCount ?? 0,
+        rank: rankCount !== null ? rankCount + 1 : null,
+      })
 
-    setActivity((activityData as unknown as RecentActivity[]) ?? [])
-
-    // Sync profile total_points if it drifted (e.g. admin changed product points)
-    if (livePoints !== (profile?.total_points ?? -1)) {
-      await supabase.from('profiles').update({ total_points: livePoints }).eq('id', user.id)
-    }
-    await refreshProfile()
+      setActivity((activityData as unknown as RecentActivity[]) ?? [])
+      await refreshProfile()
     } catch (err) {
-      console.error('Dashboard load error:', err)
+      logger.error('Dashboard load error:', err)
     } finally {
       setLoading(false)
     }
@@ -248,9 +248,22 @@ export default function Dashboard() {
       {/* ── Welcome banner ──────────────────────────────────── */}
       <div className="mb-8 flex flex-col gap-1">
         <p className="text-sm text-[hsl(var(--muted-foreground))]">Welcome back,</p>
-        <h1 className="font-display text-2xl font-bold text-[hsl(var(--foreground))] sm:text-3xl">
+        <h1 className="font-display text-2xl font-bold text-[hsl(var(--foreground))] sm:text-3xl flex flex-wrap items-center gap-2">
           {profile ? (
-            <>{profile.username} <span>{tier.emoji}</span></>
+            <>
+              <span>{profile.username}</span>
+              {isAdmin && (
+                <span className="rounded-full bg-amul-red/5 border border-amul-red/20 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amul-red uppercase shrink-0">
+                  Creator
+                </span>
+              )}
+              {profile.username === 'blah_blah' && (
+                <span className="rounded-full bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 px-2 py-0.5 text-[9px] font-bold tracking-wider text-blue-600 dark:text-blue-400 uppercase shrink-0">
+                  Amul Girl
+                </span>
+              )}
+              <span>{tier.emoji}</span>
+            </>
           ) : (
             <span className="inline-block h-7 w-40 animate-pulse rounded-lg bg-[hsl(var(--muted))] align-middle" />
           )}
@@ -349,7 +362,7 @@ export default function Dashboard() {
       <div className="grid gap-5 lg:grid-cols-3">
 
         {/* Recent activity */}
-        <div className="lg:col-span-2 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 shadow-card">
+        <div className="lg:col-span-2 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 shadow-card min-w-0">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-semibold text-[hsl(var(--foreground))]">
               <Clock size={16} className="text-[hsl(var(--muted-foreground))]" />
@@ -395,7 +408,7 @@ export default function Dashboard() {
                 to="/explore"
                 className="mt-4 rounded-lg bg-amul-red px-4 py-1.5 text-xs font-semibold text-white hover:bg-amul-red-dark"
               >
-                Start exploring
+                Start Pagluing
               </Link>
             </div>
           ) : (
@@ -418,7 +431,7 @@ export default function Dashboard() {
                       <p className="truncate text-sm font-medium text-[hsl(var(--foreground))]">
                         {displayName}
                       </p>
-                      <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                         {p?.rarity_label && (
                           <span className={cn(
                             'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
@@ -430,8 +443,8 @@ export default function Dashboard() {
                         <span className="text-[10px] text-[hsl(var(--muted-foreground))]">
                           {item.tried_at
                             ? new Date(item.tried_at).toLocaleDateString('en-IN', {
-                                day: 'numeric', month: 'short', year: 'numeric',
-                              })
+                              day: 'numeric', month: 'short', year: 'numeric',
+                            })
                             : ''}
                         </span>
                       </div>
@@ -449,7 +462,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick actions */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 min-w-0">
           <h2 className="font-semibold text-[hsl(var(--foreground))]">Quick actions</h2>
 
           {[
@@ -485,12 +498,12 @@ export default function Dashboard() {
             <Link
               key={to}
               to={to}
-              className="flex items-center gap-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-card transition-all hover:shadow-card-lg hover:-translate-y-0.5"
+              className="flex items-center gap-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-card transition-all hover:shadow-card-lg hover:-translate-y-0.5 min-w-0 w-full"
             >
               <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', color)}>
                 <Icon size={18} />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-[hsl(var(--foreground))]">{label}</p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))] truncate">{desc}</p>
               </div>

@@ -5,12 +5,13 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { getTier } from '@/types'
 import { cn } from '@/lib/utils'
+import logo from '@/assets/logo.png'
 
 const NAV_LINKS = [
-  { to: '/explore',     label: 'Explore'     },
-  { to: '/my-list',     label: 'My List'     },
+  { to: '/explore', label: 'Explore' },
+  { to: '/my-list', label: 'My List' },
   { to: '/leaderboard', label: 'Leaderboard' },
-  { to: '/suggest',     label: 'Suggest'     },
+  { to: '/suggest', label: 'Suggest' },
 ]
 
 export function Navbar() {
@@ -36,7 +37,7 @@ export function Navbar() {
           to={user ? '/dashboard' : '/'}
           className="flex items-center gap-2 font-display font-bold text-amul-red text-xl"
         >
-          <span className="text-2xl">🐄</span>
+          <img src={logo} alt="Amul Paglu Logo" className="h-8 w-8 object-contain" />
           <span className="hidden sm:inline">Amul Paglu</span>
         </Link>
 
@@ -154,7 +155,7 @@ export function Navbar() {
                 to="/login"
                 className="rounded-lg px-3 py-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
               >
-                Log in
+                Sign In
               </Link>
               <Link
                 to="/signup"

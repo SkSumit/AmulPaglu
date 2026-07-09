@@ -18,6 +18,7 @@ export interface BadgeConditionJson {
   category?: string
   minimum_points?: number
   before_date?: string
+  product_name?: string
 }
 
 export interface Database {
@@ -260,6 +261,10 @@ export interface Database {
       check_and_award_badges: {
         Args: { p_user_id: string }
         Returns: { new_slug: string; new_name: string; new_icon: string }[]
+      }
+      get_and_clear_new_badges: {
+        Args: { p_user_id: string }
+        Returns: { new_slug: string; new_name: string; new_icon: string; new_description: string }[]
       }
       revoke_unearned_badges: {
         Args: { p_user_id: string }

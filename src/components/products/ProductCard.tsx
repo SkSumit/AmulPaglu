@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { CheckCircle2, Plus, BookmarkCheck, Trash2, Star } from 'lucide-react'
+import { useState, memo } from 'react'
+import { CheckCircle2, Plus, BookmarkCheck, Trash2, Star, Users, User, Share2 } from 'lucide-react'
 import { cn, getDisplayProductName } from '@/lib/utils'
-import type { Product, UserProductStatus } from '@/types'
+import type { UserProductStatus, ProductWithSubmitter } from '@/types'
 import { ProductImage } from './ProductImage'
+import { shareContent, getProductShareData } from '@/lib/share'
 
 // ── Rarity maps ──────────────────────────────────────
 const RARITY_PILL: Record<string, string> = {
@@ -24,7 +25,7 @@ const RARITY_PILL: Record<string, string> = {
 
 // ── Props ──────────────────────────────────────────
 export interface ProductCardProps {
-  product: Product
+  product: ProductWithSubmitter
   userStatus: UserProductStatus | null
   triedAt?: string | null
   isLoading?: boolean
@@ -32,10 +33,11 @@ export interface ProductCardProps {
   onAddToList: () => void
   onMarkAsTried: () => void
   onRemoveFromList?: () => void
+  addToast?: (msg: string, type: 'success' | 'error') => void
 }
 
 // â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export function ProductCard({
+export const ProductCard = memo(function ProductCard({
   product,
   userStatus,
   triedAt,
@@ -44,6 +46,7 @@ export function ProductCard({
   onAddToList,
   onMarkAsTried,
   onRemoveFromList,
+  addToast,
 }: ProductCardProps) {
   const pts = product.points ?? 0
   const rarity = product.rarity_label
@@ -58,6 +61,11 @@ export function ProductCard({
     setJustAdded(true)
     setTimeout(() => setJustAdded(false), 300)
     onAddToList()
+  }
+
+  function handleShare() {
+    const data = getProductShareData(product)
+    void shareContent(data, addToast || (() => {}))
   }
 
   return (
@@ -148,8 +156,39 @@ export function ProductCard({
           </span>
         </div>
 
+        {/* Card Metadata */}
+        <div className="mt-auto mb-3 flex flex-col gap-1.5 text-[11px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))]/50 pt-2.5">
+          <div className="flex items-center gap-1.5">
+            <Users size={12} className="text-[hsl(var(--muted-foreground))]" />
+            <span>
+              {product.tried_count && product.tried_count > 0 ? (
+                <>
+                  Tried by{' '}
+                  <span className="font-semibold text-[hsl(var(--foreground))]">
+                    {product.tried_count}
+                  </span>{' '}
+                  user{product.tried_count !== 1 ? 's' : ''}
+                </>
+              ) : (
+                <span className="italic text-amul-red font-medium">Be the first to try!</span>
+              )}
+            </span>
+          </div>
+          {product.profiles?.username && (
+            <div className="flex items-center gap-1.5">
+              <User size={12} className="text-[hsl(var(--muted-foreground))]" />
+              <span>
+                Added by{' '}
+                <span className="font-semibold text-[hsl(var(--foreground))] text-amul-red">
+                  @{product.profiles.username}
+                </span>
+              </span>
+            </div>
+          )}
+        </div>
+
         {/* Actions */}
-        <div className="mt-auto">
+        <div>
           {isTried ? (
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 min-w-0">
@@ -160,16 +199,25 @@ export function ProductCard({
                     : 'Tried!'}
                 </span>
               </div>
-              {onRemoveFromList && (
+              <div className="flex items-center gap-1 shrink-0">
                 <button
-                  onClick={onRemoveFromList}
-                  disabled={isLoading}
-                  aria-label="Remove from list"
-                  className="shrink-0 rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 disabled:opacity-50"
+                  onClick={handleShare}
+                  className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                  aria-label="Share product"
                 >
-                  <Trash2 size={13} />
+                  <Share2 size={13} />
                 </button>
-              )}
+                {onRemoveFromList && (
+                  <button
+                    onClick={onRemoveFromList}
+                    disabled={isLoading}
+                    aria-label="Remove from list"
+                    className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 disabled:opacity-50"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
             </div>
           ) : userStatus === 'want_to_try' ? (
             <div className="flex gap-2">
@@ -192,6 +240,13 @@ export function ProductCard({
                   ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   : <CheckCircle2 size={13} />}
                 {isLoading && loadingAction === 'tried' ? 'Savingâ€¦' : 'Tried it!'}
+              </button>
+              <button
+                onClick={handleShare}
+                className="shrink-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors"
+                aria-label="Share product"
+              >
+                <Share2 size={14} />
               </button>
             </div>
           ) : (
@@ -216,11 +271,18 @@ export function ProductCard({
                   : <CheckCircle2 size={13} />}
                 {isLoading && loadingAction === 'tried' ? 'Savingâ€¦' : 'Tried it!'}
               </button>
+              <button
+                onClick={handleShare}
+                className="shrink-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors"
+                aria-label="Share product"
+              >
+                <Share2 size={14} />
+              </button>
             </div>
           )}
         </div>
       </div>
     </div>
   )
-}
+})
 

@@ -8,6 +8,9 @@ export type { BadgeConditionJson as BadgeCondition } from './database'
 // ── Row types (what you get back from Supabase) ────────────
 export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Product = Database['public']['Tables']['products']['Row']
+export interface ProductWithSubmitter extends Product {
+  profiles?: { username: string } | null
+}
 export type UserProduct = Database['public']['Tables']['user_products']['Row']
 export type Suggestion = Database['public']['Tables']['suggestions']['Row']
 export type ScrapeLog = Database['public']['Tables']['scrape_logs']['Row']
@@ -40,11 +43,11 @@ export interface Tier {
 }
 
 export const TIERS: Tier[] = [
-  { label: 'Milk Drinker',        emoji: '🥛', minPoints: 0,   maxPoints: 50,  color: 'tier-milk'    },
-  { label: 'Cheese Explorer',     emoji: '🧀', minPoints: 51,  maxPoints: 150, color: 'tier-cheese'  },
-  { label: 'Ice Cream Connoisseur', emoji: '🍦', minPoints: 151, maxPoints: 300, color: 'tier-icecream' },
-  { label: 'Butter Aficionado',   emoji: '🧈', minPoints: 301, maxPoints: 500, color: 'tier-butter'  },
-  { label: 'Amul Legend',         emoji: '👑', minPoints: 501, maxPoints: Infinity, color: 'tier-legend' },
+  { label: 'Lactose Trainee',     emoji: '🍼', minPoints: 0,   maxPoints: 50,  color: 'tier-milk'    },
+  { label: 'Shrikhand Scholar',   emoji: '🥣', minPoints: 51,  maxPoints: 150, color: 'tier-cheese'  },
+  { label: 'Kulfi Kingpin',       emoji: '🍨', minPoints: 151, maxPoints: 300, color: 'tier-icecream' },
+  { label: 'Makhan Chor',         emoji: '🧈', minPoints: 301, maxPoints: 500, color: 'tier-butter'  },
+  { label: 'Amul Paglu',          emoji: '👑', minPoints: 501, maxPoints: Infinity, color: 'tier-legend' },
 ]
 
 export function getTier(points: number): Tier {
@@ -67,6 +70,8 @@ export type BadgeConditionType =
   | 'rarity_tried_count'
   | 'suggestion_approved'
   | 'early_adopter'
+  | 'all_complete'
+  | 'product_tried'
 
 export type Badge = Database['public']['Tables']['badges']['Row']
 export type UserBadge = Database['public']['Tables']['user_badges']['Row']
@@ -85,10 +90,18 @@ export function conditionSummary(condition: BadgeConditionJson): string {
       return `Try all products in "${condition.category}"`
     case 'rarity_tried_count':
       return `Try ${condition.minimum_count} or more products with ${condition.minimum_points}+ points`
-    case 'suggestion_approved':
-      return 'Get at least 1 product suggestion approved'
-    case 'early_adopter':
-      return `Sign up before ${condition.before_date ?? 'a certain date'}`
+    case 'suggestion_approved': {
+      const min = condition.minimum_count ?? 1
+      return `Get at least ${min} product suggestion${min !== 1 ? 's' : ''} approved`
+    }
+    case 'early_adopter': {
+      const min = condition.minimum_count ?? 50
+      return `Sign up as one of the first ${min} users`
+    }
+    case 'all_complete':
+      return 'Try all approved products in the entire catalog'
+    case 'product_tried':
+      return `Try the product matching "${condition.product_name ?? ''}"`
     default:
       return 'Special condition'
   }

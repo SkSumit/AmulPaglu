@@ -47,10 +47,10 @@ create policy "products_delete_admin"
  
 -- ---------- user_products ----------
 drop policy if exists "user_products_select_own" on public.user_products;
-create policy "user_products_select_own"
+drop policy if exists "user_products_select_all" on public.user_products;
+create policy "user_products_select_all"
   on public.user_products for select
-  to authenticated
-  using (user_id = auth.uid());
+  using (true);
  
 drop policy if exists "user_products_insert_own" on public.user_products;
 create policy "user_products_insert_own"
@@ -87,6 +87,14 @@ create policy "suggestions_insert_own"
 drop policy if exists "suggestions_update_admin" on public.suggestions;
 create policy "suggestions_update_admin"
   on public.suggestions for update
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+-- ---------- scrape_logs ----------
+drop policy if exists "scrape_logs_admin_all" on public.scrape_logs;
+create policy "scrape_logs_admin_all"
+  on public.scrape_logs
   to authenticated
   using (public.is_admin())
   with check (public.is_admin());

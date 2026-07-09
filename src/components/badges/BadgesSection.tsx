@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { X, Lock } from 'lucide-react'
+import { X, Lock, Share2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Badge } from '@/types'
+import { useToast, ToastContainer } from '@/components/ui/Toast'
+import { shareContent, getBadgeShareData } from '@/lib/share'
 
 // ── Badge Card ─────────────────────────────────────────────
 interface BadgeCardProps {
@@ -12,14 +14,17 @@ interface BadgeCardProps {
 }
 
 function BadgeCard({ badge, earned, onClick }: BadgeCardProps) {
+  const isPagluest = badge.slug === 'amul_pagluest'
   return (
     <button
       onClick={onClick}
       title={badge.name}
       className={cn(
-        'relative flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all hover:scale-105 hover:shadow-md focus:outline-none',
+        'relative flex flex-col items-center gap-1.5 rounded-2xl border p-2 sm:p-3 text-center transition-all hover:scale-105 hover:shadow-md focus:outline-none',
         earned
-          ? 'border-amul-red/20 bg-amul-red/5 dark:bg-amul-red/10 badge-shine'
+          ? isPagluest
+            ? 'badge-pagluest'
+            : 'border-amul-red/20 bg-amul-red/5 dark:bg-amul-red/10 badge-shine'
           : 'border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 opacity-50 grayscale'
       )}
     >
@@ -43,6 +48,13 @@ interface BadgeModalProps {
 }
 
 function BadgeModal({ badge, earned, earnedAt, onClose }: BadgeModalProps) {
+  const { toasts, addToast, dismiss } = useToast()
+
+  function handleShareBadge() {
+    const data = getBadgeShareData(badge)
+    void shareContent(data, addToast)
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -61,8 +73,12 @@ function BadgeModal({ badge, earned, earnedAt, onClose }: BadgeModalProps) {
 
         <div className={cn('flex flex-col items-center text-center', !earned && 'opacity-60 grayscale')}>
           <div className={cn(
-            'flex h-20 w-20 items-center justify-center rounded-2xl text-5xl',
-            earned ? 'bg-amul-red/10' : 'bg-[hsl(var(--muted))]'
+            'flex h-20 w-20 items-center justify-center rounded-2xl text-5xl transition-all',
+            earned
+              ? badge.slug === 'amul_pagluest'
+                ? 'bg-gradient-to-br from-amber-400/20 to-yellow-500/30 border border-amber-400/50 shadow-[0_0_20px_rgba(245,158,11,0.4)] animate-bounce-gentle'
+                : 'bg-amul-red/10'
+              : 'bg-[hsl(var(--muted))]'
           )}>
             {badge.icon}
           </div>
@@ -73,8 +89,13 @@ function BadgeModal({ badge, earned, earnedAt, onClose }: BadgeModalProps) {
             </div>
           )}
           {earned && (
-            <div className="mt-3 flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
-              ✓ Earned{earnedAt ? ` · ${new Date(earnedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
+            <div className={cn(
+              'mt-3 flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold',
+              badge.slug === 'amul_pagluest'
+                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+            )}>
+              ✓ {badge.slug === 'amul_pagluest' ? 'Ultimate Title Earned' : 'Earned'}{earnedAt ? ` · ${new Date(earnedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
             </div>
           )}
         </div>
@@ -85,12 +106,21 @@ function BadgeModal({ badge, earned, earnedAt, onClose }: BadgeModalProps) {
         <p className="mt-2 text-center text-sm text-[hsl(var(--muted-foreground))]">
           {badge.description}
         </p>
-        {!earned && (
+        {!earned ? (
           <p className="mt-3 rounded-xl bg-[hsl(var(--muted))]/50 px-3 py-2 text-center text-xs text-[hsl(var(--muted-foreground))]">
             Keep exploring to unlock this badge!
           </p>
+        ) : (
+          <button
+            onClick={handleShareBadge}
+            className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-amul-red px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-amul-red-dark"
+          >
+            <Share2 size={13} />
+            Share Achievement
+          </button>
         )}
       </div>
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   )
 }
@@ -115,7 +145,7 @@ export function BadgesSection({ allBadges, earnedList, loading, maxVisible = 99 
 
   if (loading) {
     return (
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+      <div className="grid grid-cols-3 min-[380px]:grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="h-20 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />
         ))}
@@ -141,7 +171,7 @@ export function BadgesSection({ allBadges, earnedList, loading, maxVisible = 99 
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+      <div className="grid grid-cols-3 min-[380px]:grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
         {visible.map((badge) => (
           <BadgeCard
             key={badge.slug}

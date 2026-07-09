@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Star, CheckCircle2, ChevronDown, X } from 'lucide-react'
+import { Search, CheckCircle2, ChevronDown, X, LayoutGrid, List, Trash2, Calendar, Award } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast, ToastContainer } from '@/components/ui/Toast'
 import { ProductCard } from '@/components/products/ProductCard'
-import type { Product, UserProductStatus } from '@/types'
+import type { UserProductStatus, ProductWithSubmitter } from '@/types'
 import { cn, getDisplayProductName } from '@/lib/utils'
 import { checkAndAwardBadges, revokeBadgesIfNeeded } from '@/lib/badges'
 import { BadgeUnlockPopup, type UnlockedBadge } from '@/components/badges/BadgeUnlockPopup'
+import { logger } from '@/lib/logger'
 
 // ── Local types ────────────────────────────────────────────
 interface ListEntry {
@@ -16,13 +17,12 @@ interface ListEntry {
   status: UserProductStatus
   tried_at: string | null
   notes: string | null
-  product: Product
+  product: ProductWithSubmitter
 }
 type SortBy = 'newest' | 'points_desc' | 'name_asc' | 'tried_asc'
 type Tab    = 'want_to_try' | 'tried'
 
 const RARITIES      = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary']
-const AVAILABILITIES = ['Pan India', 'Regional', 'Seasonal', 'Discontinued']
 
 // ── Component ──────────────────────────────────────────────
 export default function MyList() {
@@ -35,12 +35,13 @@ export default function MyList() {
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({})
   const [tab,           setTab]           = useState<Tab>('want_to_try')
   const [unlockedBadges, setUnlockedBadges] = useState<UnlockedBadge[]>([])
+  const [catalogCount,  setCatalogCount]  = useState(0)
+  const [viewMode,      setViewMode]      = useState<'grid' | 'list'>('grid')
 
   // Filters
   const [search,             setSearch]             = useState('')
   const [filterCategory,     setFilterCategory]     = useState('')
   const [filterRarity,       setFilterRarity]       = useState('')
-  const [filterAvailability, setFilterAvailability] = useState('')
   const [sortBy,             setSortBy]             = useState<SortBy>('newest')
 
   // ── Load ──────────────────────────────────────────────
@@ -51,6 +52,19 @@ export default function MyList() {
     } else {
       setLoading(false)
     }
+  }, [authLoading, user?.id])
+
+  // Re-fetch data on visibility change (wake-up fallback)
+  useEffect(() => {
+    if (authLoading || !user) return
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        logger.warn('MyList visible, re-fetching list...')
+        void loadData()
+      }
+    }
+    window.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => window.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [authLoading, user?.id])
 
   async function loadData() {
@@ -68,7 +82,8 @@ export default function MyList() {
           products (
             id, name, category, description, image_url, points,
             rarity_label, availability, is_discontinued, source_url,
-            status, submitted_by, created_at, updated_at
+            status, submitted_by, created_at, updated_at, tried_count,
+            profiles:submitted_by(username)
           )
         `)
         .eq('user_id', user.id)
@@ -83,10 +98,17 @@ export default function MyList() {
           status:        row.status as UserProductStatus,
           tried_at:      row.tried_at,
           notes:         row.notes,
-          product:       row.products as unknown as Product,
+          product:       row.products as unknown as ProductWithSubmitter,
         }))
 
       setEntries(list)
+
+      // Fetch total approved products in catalog for progress calculations
+      const { count } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'approved')
+      if (count) setCatalogCount(count)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load your list'
       setLoadError(msg)
@@ -118,7 +140,6 @@ export default function MyList() {
     }
     if (filterCategory)     list = list.filter((e) => e.product.category     === filterCategory)
     if (filterRarity)       list = list.filter((e) => e.product.rarity_label === filterRarity)
-    if (filterAvailability) list = list.filter((e) => e.product.availability === filterAvailability)
 
     if (sortBy === 'points_desc') list = [...list].sort((a, b) => (b.product.points ?? 0) - (a.product.points ?? 0))
     else if (sortBy === 'name_asc') list = [...list].sort((a, b) => getDisplayProductName(a.product.name).localeCompare(getDisplayProductName(b.product.name)))
@@ -128,7 +149,7 @@ export default function MyList() {
       )
     }
     return list
-  }, [entries, tab, search, filterCategory, filterRarity, filterAvailability, sortBy, triedEntries, wantEntries])
+  }, [entries, tab, search, filterCategory, filterRarity, sortBy, triedEntries, wantEntries])
 
   // ── Action: mark as tried ─────────────────────────────
   async function handleMarkAsTried(entry: ListEntry) {
@@ -239,22 +260,63 @@ export default function MyList() {
 
       {/* Header */}
       <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold text-[hsl(var(--foreground))]">
-          My List
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-[hsl(var(--foreground))]">
+          Tasting Diary
         </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-[hsl(var(--muted-foreground))]">
-          <span className="flex items-center gap-1.5">
-            <CheckCircle2 size={14} className="text-green-500" />
-            <strong className="text-[hsl(var(--foreground))]">{triedEntries.length}</strong> tried
-          </span>
-          <span className="flex items-center gap-1.5">
-            📚
-            <strong className="text-[hsl(var(--foreground))]">{wantEntries.length}</strong> want to try
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Star size={14} className="text-amul-gold" />
-            <strong className="text-amul-red">{totalPtsEarned}</strong> pts earned
-          </span>
+        <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
+          Track your personal Amul dairy adventures, wishlist products, and log tasting stats.
+        </p>
+      </div>
+
+      {/* Premium Dashboard Header */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-3 animate-fade-in">
+        {/* Card 1: Conquests */}
+        <div className="relative overflow-hidden rounded-2xl border border-[hsl(var(--border))] bg-gradient-to-br from-green-50/20 to-white/10 p-5 shadow-card dark:from-green-950/10 dark:to-transparent backdrop-blur-sm">
+          <div className="absolute right-4 top-4 text-3xl opacity-30 select-none">🏆</div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Dairy Conquests</p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-3xl font-black text-[hsl(var(--foreground))]">{triedEntries.length}</span>
+            <span className="text-xs text-[hsl(var(--muted-foreground))]">tried</span>
+          </div>
+          {/* Progress bar */}
+          <div className="mt-4">
+            <div className="flex justify-between text-[10px] font-medium text-[hsl(var(--muted-foreground))] mb-1">
+              <span>Catalog Completion</span>
+              <span>{catalogCount > 0 ? Math.round((triedEntries.length / catalogCount) * 100) : 0}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[hsl(var(--muted))]">
+              <div 
+                className="h-full bg-green-500 rounded-full transition-all duration-500" 
+                style={{ width: `${catalogCount > 0 ? Math.min(100, (triedEntries.length / catalogCount) * 100) : 0}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Wishlist */}
+        <div className="relative overflow-hidden rounded-2xl border border-[hsl(var(--border))] bg-gradient-to-br from-blue-50/20 to-white/10 p-5 shadow-card dark:from-blue-950/10 dark:to-transparent backdrop-blur-sm">
+          <div className="absolute right-4 top-4 text-3xl opacity-30 select-none">📚</div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Wishlist</p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-3xl font-black text-[hsl(var(--foreground))]">{wantEntries.length}</span>
+            <span className="text-xs text-[hsl(var(--muted-foreground))]">bookmarked</span>
+          </div>
+          <p className="mt-4 text-[10px] text-[hsl(var(--muted-foreground))] leading-relaxed">
+            Items you want to try. Click "Tried it!" to move them to your conquests list.
+          </p>
+        </div>
+
+        {/* Card 3: Score */}
+        <div className="relative overflow-hidden rounded-2xl border border-[hsl(var(--border))] bg-gradient-to-br from-amber-50/20 to-white/10 p-5 shadow-card dark:from-amber-950/10 dark:to-transparent backdrop-blur-sm">
+          <div className="absolute right-4 top-4 text-3xl opacity-35 select-none animate-pulse">⭐</div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Amul Score</p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-3xl font-black text-amul-gold dark:amul-gold-glow">{totalPtsEarned}</span>
+            <span className="text-xs text-[hsl(var(--muted-foreground))]">points earned</span>
+          </div>
+          <p className="mt-4 text-[10px] font-bold text-amul-red uppercase tracking-wider">
+            {totalPtsEarned >= 150 ? '👑 Amul Emperor' : totalPtsEarned >= 101 ? '🏆 Dairy Master' : totalPtsEarned >= 50 ? '🎩 Connoisseur' : '🌱 Growing Calf'}
+          </p>
         </div>
       </div>
 
@@ -307,7 +369,6 @@ export default function MyList() {
         <div className="flex gap-2 overflow-x-auto pb-0.5 sm:pb-0">
           <MiniSelect value={filterCategory}     onChange={setFilterCategory}     label="Category"     options={categories}  />
           <MiniSelect value={filterRarity}       onChange={setFilterRarity}       label="Rarity"       options={RARITIES}    />
-          <MiniSelect value={filterAvailability} onChange={setFilterAvailability} label="Availability" options={AVAILABILITIES} />
           <MiniSelect
             value={sortBy}
             onChange={(v) => setSortBy(v as SortBy)}
@@ -319,6 +380,34 @@ export default function MyList() {
               ...(tab === 'tried' ? [{ value: 'tried_asc', label: 'Tried date ↑' }] : []),
             ]}
           />
+
+          {/* Grid/List toggle buttons */}
+          <div className="flex rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-0.5 shrink-0">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={cn(
+                'rounded-lg p-1.5 transition-colors',
+                viewMode === 'grid'
+                  ? 'bg-[hsl(var(--muted))] text-[hsl(var(--foreground))]'
+                  : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+              )}
+              title="Grid view"
+            >
+              <LayoutGrid size={15} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={cn(
+                'rounded-lg p-1.5 transition-colors',
+                viewMode === 'list'
+                  ? 'bg-[hsl(var(--muted))] text-[hsl(var(--foreground))]'
+                  : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+              )}
+              title="List view"
+            >
+              <List size={15} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -350,9 +439,9 @@ export default function MyList() {
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <EmptyState tab={tab} hasFilters={!!(search || filterCategory || filterRarity || filterAvailability)} />
-      ) : (
-        <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <EmptyState tab={tab} hasFilters={!!(search || filterCategory || filterRarity)} />
+      ) : viewMode === 'grid' ? (
+        <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-fade-in">
           {filtered.map((entry) => (
             <ProductCard
               key={entry.userProductId}
@@ -363,8 +452,104 @@ export default function MyList() {
               onAddToList={() => {/* already on list */}}
               onMarkAsTried={() => handleMarkAsTried(entry)}
               onRemoveFromList={() => handleRemoveFromList(entry)}
+              addToast={addToast}
             />
           ))}
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] animate-fade-in">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))/30] text-xs font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                  <th className="px-5 py-3.5">Product</th>
+                  <th className="px-5 py-3.5">Category</th>
+                  <th className="px-5 py-3.5">Score</th>
+                  {tab === 'tried' && <th className="px-5 py-3.5">Tried Date</th>}
+                  <th className="px-5 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[hsl(var(--border))]">
+                {filtered.map((entry) => {
+                  const pts = entry.product.points ?? 0
+                  const rarity = entry.product.rarity_label
+                  return (
+                    <tr key={entry.userProductId} className="hover:bg-[hsl(var(--muted))/10] transition-colors">
+                      <td className="whitespace-nowrap px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-[hsl(var(--border))] bg-white flex items-center justify-center p-1">
+                            <img 
+                              src={entry.product.image_url ?? undefined} 
+                              alt={entry.product.name} 
+                              className="h-full w-full object-contain"
+                              onError={(e) => { e.currentTarget.src = '/logo.png' }}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[hsl(var(--foreground))] truncate max-w-[240px]">
+                              {getDisplayProductName(entry.product.name)}
+                            </p>
+                            {rarity && (
+                              <span className="mt-0.5 inline-block text-[9px] font-bold uppercase tracking-wider text-amul-gold">
+                                {rarity}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-4 text-[hsl(var(--muted-foreground))] font-medium">
+                        {entry.product.category || 'Uncategorized'}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-4">
+                        <div className="flex items-center gap-1 text-amul-gold">
+                          <Award size={14} />
+                          <span className="font-bold text-xs">{pts} pt{pts !== 1 ? 's' : ''}</span>
+                        </div>
+                      </td>
+                      {tab === 'tried' && (
+                        <td className="whitespace-nowrap px-5 py-4 text-[hsl(var(--muted-foreground))] text-xs font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar size={13} />
+                            <span>
+                              {entry.tried_at
+                                ? new Date(entry.tried_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                                : 'Tried'}
+                            </span>
+                          </div>
+                        </td>
+                      )}
+                      <td className="whitespace-nowrap px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {tab === 'want_to_try' && (
+                            <button
+                              onClick={() => handleMarkAsTried(entry)}
+                              disabled={actionLoading[entry.userProductId]}
+                              className="inline-flex items-center gap-1 rounded-xl bg-amul-red px-3 py-1.5 text-xs font-semibold text-white hover:bg-amul-red-dark disabled:opacity-50"
+                            >
+                              {actionLoading[entry.userProductId] ? (
+                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                              ) : (
+                                <CheckCircle2 size={12} />
+                              )}
+                              Tried it!
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleRemoveFromList(entry)}
+                            disabled={actionLoading[entry.userProductId]}
+                            className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
+                            aria-label="Remove from list"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -406,37 +591,51 @@ function MiniSelect({
 function EmptyState({ tab, hasFilters }: { tab: Tab; hasFilters: boolean }) {
   if (hasFilters) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <span className="text-4xl">🔍</span>
-        <p className="mt-4 font-semibold text-[hsl(var(--foreground))]">No matches</p>
-        <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">Try changing your filters.</p>
+      <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--card))]/30 p-8 animate-fade-in">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[hsl(var(--muted))] text-2xl">
+          🔍
+        </div>
+        <p className="mt-4 text-base font-semibold text-[hsl(var(--foreground))]">No matching products</p>
+        <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))] max-w-xs mx-auto">
+          We couldn't find anything matching your filters. Try clearing search or resetting tags!
+        </p>
       </div>
     )
   }
   if (tab === 'want_to_try') {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <span className="text-5xl">📚</span>
-        <p className="mt-4 text-base font-semibold text-[hsl(var(--foreground))]">Your bucket list is empty</p>
-        <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
-          Head to Explore and add products you want to try.
+      <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--card))]/30 p-8 animate-fade-in">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/20 text-3xl">
+          📚
+        </div>
+        <p className="mt-4 text-base font-bold text-[hsl(var(--foreground))]">Your wishlist is empty</p>
+        <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))] max-w-sm mx-auto">
+          Browse the catalog, pick delicious dairy items, and save them here so you never forget to try them!
         </p>
         <a
           href="/explore"
-          className="mt-5 rounded-xl bg-amul-red px-5 py-2 text-sm font-semibold text-white hover:bg-amul-red-dark"
+          className="mt-6 rounded-xl bg-amul-red px-6 py-2.5 text-xs font-semibold text-white shadow hover:bg-amul-red-dark transition-colors"
         >
-          Browse products
+          Browse Amul Catalog
         </a>
       </div>
     )
   }
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <span className="text-5xl">✅</span>
-      <p className="mt-4 text-base font-semibold text-[hsl(var(--foreground))]">Nothing tried yet</p>
-      <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
-        Mark products as tried from your Want-to-Try list or Explore.
+    <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--card))]/30 p-8 animate-fade-in">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50 dark:bg-green-950/20 text-3xl">
+        🥛
+      </div>
+      <p className="mt-4 text-base font-bold text-[hsl(var(--foreground))]">Start your tasting journey!</p>
+      <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))] max-w-sm mx-auto">
+        You haven't logged any tried products yet. Go to Explore and mark products as tried to log points and unlock achievements!
       </p>
+      <a
+        href="/explore"
+        className="mt-6 rounded-xl bg-amul-red px-6 py-2.5 text-xs font-semibold text-white shadow hover:bg-amul-red-dark transition-colors"
+      >
+        Explore Products
+      </a>
     </div>
   )
 }

@@ -1,6 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Amul Product Scraper — paste into Chrome DevTools console on shop.amul.com
-// Prerequisites: set any pincode in the site UI first (e.g. 400001 - Mumbai)
 // Output: downloads amul-products-YYYY-MM-DD.csv ready to import into Supabase
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -9,33 +8,21 @@
   const STORE_ID    = '62fa94df8c13af2e242eba16'  // shop.amul.com StoreHippo store ID
   const SHOP_ORIGIN = 'https://shop.amul.com'
 
-  // ── 1. Find the active substore ID (set when user picks a pincode) ──────────
-  // StoreHippo stores it in localStorage under various keys depending on version
-  const substoreId =
-    localStorage.getItem('substore') ||
-    localStorage.getItem('selectedSubstore') ||
-    localStorage.getItem('substoredId') ||
-    (() => {
-      // Try finding it in any localStorage key that looks like a 24-char hex ID
-      for (const [k, v] of Object.entries(localStorage)) {
-        if (/substore/i.test(k) && /^[a-f0-9]{24}$/.test(v)) return v
-      }
-    })()
+  // Styles for console formatting
+  const logStyle = 'color: #38bdf8; font-weight: bold;'      // cyan
+  const successStyle = 'color: #4ade80; font-weight: bold;'  // green
+  const warnStyle = 'color: #fbbf24; font-weight: bold;'     // gold
+  const errorStyle = 'color: #f87171; font-weight: bold;'    // red
 
-  if (!substoreId) {
-    console.warn('[AmulScraper] Could not auto-detect substore ID. Set a pincode in the site UI first, then re-run.')
-    return
-  }
+  console.warn('%c🚀 [AmulScraper] Starting multi-region scrape...', logStyle)
 
-  console.log('[AmulScraper] Substore:', substoreId)
-
-  // ── 2. Build request headers (browser sends cookies automatically) ──────────
+  // ── 1. Build request headers ──────────────────────────────────────────────
   function getMsGa() {
     const m = document.cookie.match(/_ga=GA[\d.]+\.([\d.]+)/)
     return m ? m[1] : '0.0'
   }
   function makeTid() {
-    const hex = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    const hex = Array.from(crypto.getRandomValues(new Uint8Array(16)))
       .map(b => b.toString(16).padStart(2, '0')).join('')
     return `${Date.now()}:${Math.floor(Math.random() * 9999)}:${hex}`
   }
@@ -50,95 +37,145 @@
     'pragma':           'no-cache',
   }
 
+  // ── 2. Fetch all pincodes to extract unique substores ──────────────────────
+  let pincodes = []
+  let pincodeStart = 0
+  const PINCODE_LIMIT = 500
+
+  while (true) {
+    console.warn(`%c📡 [AmulScraper] Fetching pincodes start=${pincodeStart}...`, logStyle)
+    try {
+      const pinResp = await fetch(
+        `${SHOP_ORIGIN}/entity/pincode?limit=${PINCODE_LIMIT}&start=${pincodeStart}&cf_cache=1h`,
+        { headers: { ...HEADERS, tid: makeTid() } }
+      )
+      if (!pinResp.ok) {
+        console.error(`%c❌ [AmulScraper] Pincode fetch failed: HTTP ${pinResp.status}`, errorStyle)
+        break
+      }
+      const pinData = await pinResp.json()
+      const records = pinData?.data ?? pinData?.records ?? []
+      if (records.length === 0) break
+      
+      pincodes.push(...records)
+      pincodeStart += PINCODE_LIMIT
+      
+      console.warn(`%c  └─ Loaded ${records.length} pincodes. Total loaded: ${pincodes.length}`, successStyle)
+      if (records.length < PINCODE_LIMIT) break
+      await new Promise(r => setTimeout(r, 200))
+    } catch(e) {
+      console.error(`%c❌ [AmulScraper] Pincode fetch error: ${e.message}`, errorStyle)
+      break
+    }
+  }
+
+  console.warn(`%c📊 [AmulScraper] Fetched ${pincodes.length} total pincode records from directory.`, successStyle)
+
+  const uniqueSubstores = new Set()
+  // Add default baseline substore ID
+  uniqueSubstores.add('62fa94df8c13af2e242eba16')
+  
+  // Track how many pincodes map to each substore
+  const substoreFrequency = {}
+  substoreFrequency['62fa94df8c13af2e242eba16'] = 0 // baseline placeholder
+
+  for (const rec of pincodes) {
+    if (rec.substore) {
+      const sub = String(rec.substore).trim()
+      uniqueSubstores.add(sub)
+      substoreFrequency[sub] = (substoreFrequency[sub] || 0) + 1
+    }
+  }
+  
+  const substoresList = Array.from(uniqueSubstores)
+  console.warn(`%c🔍 [AmulScraper] Discovered ${substoresList.length} unique regional substores:`, warnStyle)
+  for (const sub of substoresList) {
+    const pinCount = substoreFrequency[sub] ?? 0
+    console.warn(`%c  └─ Region: "${sub}" serves ${pinCount} listed pincodes`, logStyle)
+  }
+
   // ── Image URL builder ────────────────────────────────────────────────────────
   function buildImageUrl(p) {
     const imgObj = p.images?.[0]
     if (!imgObj) return ''
+    let raw = ''
     if (typeof imgObj === 'string') {
-      return imgObj.startsWith('http') ? imgObj : `${SHOP_ORIGIN}/s/${STORE_ID}/${imgObj}`
+      raw = imgObj
+    } else {
+      raw = imgObj.image || imgObj.name || imgObj.src || imgObj.url || ''
     }
-    // StoreHippo object form: { image: "fileId/filename.jpg" }
-    // also check name/src/url as fallbacks
-    const raw = imgObj.image || imgObj.name || imgObj.src || imgObj.url || ''
     if (!raw) return ''
-    return raw.startsWith('http') ? raw : `${SHOP_ORIGIN}/s/${STORE_ID}/${raw}`
+    if (raw.startsWith('http')) return raw
+
+    let clean = raw.startsWith('/') ? raw.slice(1) : raw
+    if (clean.startsWith('s/')) {
+      return `${SHOP_ORIGIN}/${clean}`
+    }
+    return `${SHOP_ORIGIN}/s/${STORE_ID}/${clean}`
   }
 
   // ── Rarity + Points ───────────────────────────────────────────────────────────
-  // Legendary (25 pts) — almost impossible to find outside select cities
-  // Epic      (10 pts) — specialty / health / premium range
-  // Rare      ( 5 pts) — supermarket but not corner-shop level
-  // Uncommon  ( 3 pts) — common supermarket, not every kirana
-  // Common    ( 1 pt)  — every kirana / general store in India
+  // Legendary (5 pts) — database check constraint allows 1 to 5 points
   function getRarity(name, category, price) {
     const n = (name + ' ' + category).toLowerCase()
 
     // Price tiers: very expensive products skew rarer
-    if (price >= 2000) return { rarity_label: 'Legendary', points: 25 }
-    if (price >= 800)  return { rarity_label: 'Epic',      points: 10 }
+    if (price >= 2000) return { rarity_label: 'Legendary', points: 5 }
+    if (price >= 800)  return { rarity_label: 'Epic',      points: 4 }
 
     if (/camel|isabcool|nolen gur|pan nawabi|rajwadi|mast khoa|kulhad|matka kulfi/.test(n))
-      return { rarity_label: 'Legendary', points: 25 }
+      return { rarity_label: 'Legendary', points: 5 }
 
     if (/protein|organic|gourmet|cheddar|gouda|edam|emmental|feta|buffalo mozzarella|cream cheese|probiotic|sugar.free|lactose.free|less sugar|isabgol|caramel cookie|epic range|epic almond|epic choco|epic strawberry/.test(n))
-      return { rarity_label: 'Epic', points: 10 }
+      return { rarity_label: 'Epic', points: 4 }
 
     if (/shrikhand|mithai.mate|infant|paneer|ghee|cream cheese|garlic.*butter|choco.*butter|safed makkhan|unsalted butter|amul lite|cheese.*sauce|diced.*cheese|pizza cheese|spread|flavoured.*butter|khakhra|puffles|butter.cake|whole.wheat|atta|confection|honey|organic/.test(n) || price >= 400)
-      return { rarity_label: 'Rare', points: 5 }
+      return { rarity_label: 'Rare', points: 3 }
 
     if (/chocolate|choco|lassi|buttermilk|milkshake|smoothie|coffee|flavoured.milk|aerated|juice|cooler|malt|cookie|rusk|toast|bread|kulfi|tricone|stick|fundoo|novelty|party.pack|ice.malai|kesar|rajbhog|falooda|shalimar|cassata|gudbud/.test(n) || price >= 150)
-      return { rarity_label: 'Uncommon', points: 3 }
+      return { rarity_label: 'Uncommon', points: 2 }
 
     return { rarity_label: 'Common', points: 1 }
   }
-  console.log('[AmulScraper] Fetching collections...')
-  let collections = []
-  try {
-    const colResp = await fetch(
-      `${SHOP_ORIGIN}/api/1/entity/ms.collections?fields[alias]=1&fields[name]=1&limit=200&start=0&substore=${substoreId}`,
-      { headers: { ...HEADERS, tid: makeTid() } }
-    )
-    const colData = await colResp.json()
-    collections = (colData?.data ?? []).map(c => c.alias).filter(Boolean)
-    console.log('[AmulScraper] Collections found:', collections.length, collections)
-  } catch(e) {
-    console.warn('[AmulScraper] Could not fetch collections, will fetch all products directly:', e.message)
-  }
 
-  // ── 4. Paginate through all products (per collection if available) ───────────
+  // ── 3. Crawl products from all substores ────────────────────────────────────
   const FIELDS = [
     'name', 'alias', 'categories', 'collections',
     'images', 'brand', 'available', 'price',
   ].map(f => `fields[${f}]=1`).join('&')
 
-  async function fetchPage(start, collectionAlias) {
+  const allProducts = []
+  const seen        = new Set()
+  let cumulativeScanned = 0
+  const regionBreakdown = {}
+
+  async function fetchPage(start, substoreId) {
     let url =
       `${SHOP_ORIGIN}/api/1/entity/ms.products` +
       `?${FIELDS}` +
       `&limit=${PAGE_SIZE}&start=${start}` +
       `&cdc=1m&device_type=other` +
       `&substore=${substoreId}`
-    if (collectionAlias) {
-      url += `&filters[0][field]=collections&filters[0][value][0]=${collectionAlias}&filters[0][operator]=in&filters[0][original]=1`
-    }
     const resp = await fetch(url, { headers: { ...HEADERS, tid: makeTid() } })
-    if (!resp.ok) throw new Error(`HTTP ${resp.status} (start=${start})`)
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
     return resp.json()
   }
 
-  async function fetchAllForScope(collectionAlias) {
+  async function fetchAllForSubstore(substoreId) {
     let start = 0
     let fetched = 0
     while (true) {
       let data
       try {
-        data = await fetchPage(start, collectionAlias)
+        data = await fetchPage(start, substoreId)
       } catch (e) {
-        console.error('[AmulScraper] Fetch error:', e.message)
+        console.error(`%c❌ [AmulScraper] Product fetch error for region "${substoreId}" start=${start}: ${e.message}`, errorStyle)
         break
       }
       const items = data?.data ?? data?.products ?? []
       if (items.length === 0) break
+
+      cumulativeScanned += items.length
 
       for (const p of items) {
         const key = p.alias || p.name
@@ -147,18 +184,22 @@
 
         const imgUrl  = buildImageUrl(p)
 
-        // Category: slug like "camel-milk" → "Camel Milk"
+        // Category formatting
         let categorySlug = ''
         const cat = p.categories?.[0]
         if (typeof cat === 'string')      categorySlug = cat
         else if (typeof cat === 'object') categorySlug = cat?.alias ?? cat?.name ?? cat?.title ?? ''
-        const category = categorySlug
-          .trim()
-          .split('-')
-          .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(' ')
+        
+        let category = 'Other'
+        if (categorySlug) {
+          category = categorySlug
+            .trim()
+            .split('-')
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ')
+        }
 
-        const availability = p.available === 1 || p.available === true ? 'in_stock' : 'out_of_stock'
+        const availability = p.available === 1 || p.available === true ? 'Pan India' : 'Discontinued'
         const { rarity_label, points } = getRarity(p.name ?? '', category, p.price ?? 0)
 
         allProducts.push({
@@ -176,35 +217,32 @@
 
       start += PAGE_SIZE
       if (items.length < PAGE_SIZE) break
-      await new Promise(r => setTimeout(r, 300))
+      await new Promise(r => setTimeout(r, 150))
     }
     return fetched
   }
 
-  const allProducts = []
-  const seen        = new Set()
+  // Iterate regions
+  for (let idx = 0; idx < substoresList.length; idx++) {
+    const sub = substoresList[idx]
+    console.warn(`%c🔄 [AmulScraper] Crawling region ${idx + 1}/${substoresList.length} ("${sub}")...`, logStyle)
+    const n = await fetchAllForSubstore(sub)
+    regionBreakdown[sub] = n
+    console.warn(`%c  └─ Region "${sub}" scan: added +${n} unique products. (Accumulated unique catalog: ${allProducts.length})`, successStyle)
+    await new Promise(r => setTimeout(r, 200))
+  }
 
-  console.log('[AmulScraper] Fetching products...')
+  console.warn(`%c🏁 [AmulScraper] Scraping complete!`, warnStyle)
+  console.warn(`%c  ├─ Total raw products scanned: ${cumulativeScanned}`, logStyle)
+  console.warn(`%c  └─ Deduplicated catalog size:  ${allProducts.length} unique products`, successStyle)
 
-  if (collections.length > 0) {
-    // Fetch per collection — bypasses the substore product limit
-    for (const alias of collections) {
-      const n = await fetchAllForScope(alias)
-      console.log(`[AmulScraper] Collection "${alias}": +${n} new | total so far: ${allProducts.length}`)
-      await new Promise(r => setTimeout(r, 300))
-    }
-    // Also do a global sweep to catch products not assigned to any collection
-    console.log('[AmulScraper] Running global sweep for uncategorised products...')
-    const globalN = await fetchAllForScope(null)
-    console.log(`[AmulScraper] Global sweep: +${globalN} new | total: ${allProducts.length}`)
-  } else {
-    // No collections found — fall back to a single sweep
-    await fetchAllForScope(null)
-    console.log('[AmulScraper] Products collected:', allProducts.length)
+  console.warn(`%c📊 [AmulScraper] Region-wise Breakdown:`, warnStyle)
+  for (const [sub, count] of Object.entries(regionBreakdown)) {
+    console.warn(`%c  - "${sub}": ${count} unique products`, logStyle)
   }
 
   if (allProducts.length === 0) {
-    console.error('[AmulScraper] Got 0 products. The substore (' + substoreId + ') may not serve this area. Try setting a different pincode and re-running.')
+    console.error(`%c❌ [AmulScraper] Collected 0 products. Something went wrong.`, errorStyle)
     return
   }
 
@@ -227,6 +265,7 @@
   a.click()
   document.body.removeChild(a)
 
-  console.log('[AmulScraper] Done!', allProducts.length, 'products saved to', filename)
+  console.warn(`%c💾 [AmulScraper] CSV downloaded successfully as: ${filename}`, successStyle)
+  console.warn(`%c💡 Make sure you enable the "Info" or "Verbose" level in your console filters to see detailed tables.`, warnStyle)
   console.table(allProducts.slice(0, 5))
 })()

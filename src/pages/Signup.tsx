@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { friendlyError } from '@/lib/errors'
 import { cn } from '@/lib/utils'
+import logo from '@/assets/logo.png'
+import { logger } from '@/lib/logger'
 
 // Username rules: 3–20 chars, letters/numbers/underscores only
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
@@ -108,7 +110,7 @@ export default function Signup() {
         return
       }
       // Any other error (RLS, network, etc.) — AuthContext will retry via SIGNED_IN
-      console.warn('Profile upsert timing issue during signup (AuthContext will fix):', profileError.message)
+      logger.warn('Profile upsert timing issue during signup (AuthContext will fix):', profileError.message)
     }
 
     navigate('/dashboard', { replace: true })
@@ -121,7 +123,7 @@ export default function Signup() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center gap-2 font-display font-bold text-amul-red text-2xl">
-            <span className="text-4xl">🐄</span>
+            <img src={logo} alt="Amul Paglu Logo" className="h-12 w-12 object-contain" />
             <span>Amul Paglu</span>
           </Link>
           <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
