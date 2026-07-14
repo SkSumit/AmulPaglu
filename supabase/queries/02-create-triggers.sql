@@ -81,16 +81,16 @@ begin
   if current_setting('request.jwt.claims', true) is null then
     return new;
   end if;
-
+ 
   -- If this update is happening internally via another trigger (like your points trigger), allow it
   if pg_trigger_depth() > 1 then
     return new;
   end if;
-
+ 
   if new.is_admin is distinct from old.is_admin and not public.is_admin() then
     new.is_admin := old.is_admin;
   end if;
-
+ 
   if new.total_points is distinct from old.total_points and not public.is_admin() then
     new.total_points := old.total_points;
   end if;
@@ -125,9 +125,9 @@ begin
   else
     record_to_use := NEW;
   end if;
-
+ 
   select points into product_points from public.products where id = record_to_use.product_id;
-
+ 
   if TG_OP = 'DELETE' then
     if OLD.status = 'tried' then
       update public.profiles set total_points = greatest(total_points - coalesce(product_points, 0), 0)
@@ -135,7 +135,7 @@ begin
     end if;
     return OLD;
   end if;
-
+ 
   if NEW.status = 'tried' and (OLD is null or OLD.status is distinct from 'tried') then
     update public.profiles set total_points = total_points + coalesce(product_points, 0)
     where id = NEW.user_id;
@@ -146,7 +146,7 @@ begin
     update public.profiles set total_points = greatest(total_points - coalesce(product_points, 0), 0)
     where id = NEW.user_id;
   end if;
-
+ 
   return NEW;
 end;
 $$;

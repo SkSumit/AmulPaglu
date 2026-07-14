@@ -634,7 +634,7 @@ export default function Landing() {
               </div>
 
               <p className="mt-6 text-center lg:text-left text-xs text-[hsl(var(--muted-foreground))]">
-                {remainingBadgesCount > 0 
+                {remainingBadgesCount > 0
                   ? `…and ${remainingBadgesCount} more to discover once you start exploring.`
                   : "…and many more to discover once you start exploring."}
               </p>
@@ -742,7 +742,7 @@ export default function Landing() {
           </a>
           {" · "}
           <a
-            href="https://github.com/skolpekwar"
+            href="https://github.com/SkSumit/AmulPaglu/"
             target="_blank"
             rel="noopener noreferrer"
             className="underline underline-offset-2 hover:text-amul-red"
@@ -754,3 +754,4 @@ export default function Landing() {
     </div>
   );
 }
+

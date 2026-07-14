@@ -4,6 +4,7 @@ import { cn, getDisplayProductName } from '@/lib/utils'
 import type { UserProductStatus, ProductWithSubmitter } from '@/types'
 import { ProductImage } from './ProductImage'
 import { shareContent, getProductShareData } from '@/lib/share'
+import { useAuth } from '@/contexts/AuthContext'
 
 // ── Rarity maps ──────────────────────────────────────
 const RARITY_PILL: Record<string, string> = {
@@ -48,6 +49,7 @@ export const ProductCard = memo(function ProductCard({
   onRemoveFromList,
   addToast,
 }: ProductCardProps) {
+  const { user } = useAuth()
   const pts = product.points ?? 0
   const rarity = product.rarity_label
   const productName = getDisplayProductName(product.name)
@@ -200,13 +202,15 @@ export const ProductCard = memo(function ProductCard({
                 </span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                <button
-                  onClick={handleShare}
-                  className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-                  aria-label="Share product"
-                >
-                  <Share2 size={13} />
-                </button>
+                {user && (
+                  <button
+                    onClick={handleShare}
+                    className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                    aria-label="Share product"
+                  >
+                    <Share2 size={13} />
+                  </button>
+                )}
                 {onRemoveFromList && (
                   <button
                     onClick={onRemoveFromList}
@@ -229,7 +233,7 @@ export const ProductCard = memo(function ProductCard({
                 {isLoading && loadingAction === 'remove'
                   ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-600 border-t-transparent dark:border-gray-300" />
                   : <Plus size={13} className="rotate-45" />}
-                {isLoading && loadingAction === 'remove' ? 'Removingâ€¦' : 'Remove'}
+                {isLoading && loadingAction === 'remove' ? 'Removing…' : 'Remove'}
               </button>
               <button
                 onClick={onMarkAsTried}
@@ -239,15 +243,17 @@ export const ProductCard = memo(function ProductCard({
                 {isLoading && loadingAction === 'tried'
                   ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   : <CheckCircle2 size={13} />}
-                {isLoading && loadingAction === 'tried' ? 'Savingâ€¦' : 'Tried it!'}
+                {isLoading && loadingAction === 'tried' ? 'Saving…' : 'Tried it!'}
               </button>
-              <button
-                onClick={handleShare}
-                className="shrink-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors"
-                aria-label="Share product"
-              >
-                <Share2 size={14} />
-              </button>
+              {user && (
+                <button
+                  onClick={handleShare}
+                  className="shrink-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors"
+                  aria-label="Share product"
+                >
+                  <Share2 size={14} />
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex gap-2">
@@ -259,7 +265,7 @@ export const ProductCard = memo(function ProductCard({
                 {isLoading && loadingAction === 'add'
                   ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-amul-red border-t-transparent" />
                   : <Plus size={13} />}
-                {isLoading && loadingAction === 'add' ? 'Addingâ€¦' : 'Add to List'}
+                {isLoading && loadingAction === 'add' ? 'Adding…' : 'Add to List'}
               </button>
               <button
                 onClick={onMarkAsTried}
@@ -269,15 +275,17 @@ export const ProductCard = memo(function ProductCard({
                 {isLoading && loadingAction === 'tried'
                   ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   : <CheckCircle2 size={13} />}
-                {isLoading && loadingAction === 'tried' ? 'Savingâ€¦' : 'Tried it!'}
+                {isLoading && loadingAction === 'tried' ? 'Saving…' : 'Tried it!'}
               </button>
-              <button
-                onClick={handleShare}
-                className="shrink-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors"
-                aria-label="Share product"
-              >
-                <Share2 size={14} />
-              </button>
+              {user && (
+                <button
+                  onClick={handleShare}
+                  className="shrink-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors"
+                  aria-label="Share product"
+                >
+                  <Share2 size={14} />
+                </button>
+              )}
             </div>
           )}
         </div>

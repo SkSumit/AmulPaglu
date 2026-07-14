@@ -22,11 +22,12 @@ Follow these steps to set up and run the application locally on your machine.
 To run this application, you must link it to a Supabase project:
 1. Create a project in your [Supabase Dashboard](https://supabase.com/).
 2. Open the **SQL Editor** in your Supabase project dashboard.
-3. Run the database setup scripts in order:
-   * **Tables Schema**: Paste and run the query script inside [create-tables.sql](./supabase/queries/create-tables.sql) to instantiate table structures, relational keys, and indexes.
-   * **Triggers & Functions**: Paste and run [create-triggers.sql](./supabase/queries/create-triggers.sql) to set up automatic profile creation for new users, tried points accrual triggers, and column security checks.
-   * **RLS Policies**: Paste and run [configure-rls.sql](./supabase/queries/configure-rls.sql) to configure Postgres Row-Level Security policies.
-   * **Badges Feature**: Paste and run [configure-badges.sql](./supabase/queries/configure-badges.sql) to setup achievements conditions and insert default seed badges.
+3. Run the database setup scripts in sequential order:
+   * **01 - Tables Schema**: Paste and run the query script inside [01-create-tables.sql](./supabase/queries/01-create-tables.sql) to instantiate core table structures, relational keys, and performance indexes.
+   * **02 - Triggers & Functions**: Paste and run [02-create-triggers.sql](./supabase/queries/02-create-triggers.sql) to set up helper functions, automatic profile creation, and tried points triggers.
+   * **03 - RLS Policies**: Paste and run [03-configure-rls.sql](./supabase/queries/03-configure-rls.sql) to configure Postgres Row-Level Security policies.
+   * **04 - Badges Feature**: Paste and run [04-configure-badges.sql](./supabase/queries/04-configure-badges.sql) to instantiate badge definitions, evaluation functions, and seed default achievements.
+   * **05 - RPCs & Cache**: Paste and run [05-production-fixes.sql](./supabase/queries/05-production-fixes.sql) to set up leaderboard aggregations, landing page performance cache, and user administration utilities.
 
 ### 2. Environment Configurations
 1. Copy `.env.example` to a new file named `.env` in the root folder.
@@ -249,13 +250,14 @@ erDiagram
 ```
 
 ### Core SQL Scripts (`supabase/queries/`)
-*   `create-tables.sql`: Instantiates database schemas, primary/foreign keys, check constraints, and performance indexes.
-*   `create-triggers.sql`: Defines:
+*   `01-create-tables.sql`: Instantiates database schemas, primary/foreign keys, check constraints, and performance indexes.
+*   `02-create-triggers.sql`: Defines:
     1.  `handle_new_user()`: Automatically inserts a row into `profiles` when a user signs up.
     2.  `award_points_on_tried()`: Updates user points when a checklist item status is toggled.
     3.  `protect_profile_columns()`: Prevents non-admin client calls from modifying points or admin flags.
-*   `configure-rls.sql`: Sets security policies. Users can select profiles and products, but can only insert, update, or delete their own `user_products` and `suggestions` rows.
-*   `configure-badges.sql`: Instantiates the badges definitions and seeds conditions (e.g. `tried_count`, `category_complete`).
+*   `03-configure-rls.sql`: Sets security policies. Users can select profiles and products, but can only insert, update, or delete their own `user_products` and `suggestions` rows.
+*   `04-configure-badges.sql`: Instantiates the badges definitions, automated badge triggers, and seeds conditions (e.g. `tried_count`, `category_complete`).
+*   `05-production-fixes.sql`: Configures the leaderboard aggregation RPC (`get_leaderboard`), suggestion rate limit checker, and landing page cache/aggregation function.
 
 ---
 

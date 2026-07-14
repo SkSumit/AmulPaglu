@@ -68,6 +68,25 @@ export default function Signup() {
 
     setLoading(true)
 
+    // Check if username is already taken
+    try {
+      const { data: existingUser, error: checkErr } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', trimmedUsername)
+        .maybeSingle()
+
+      if (checkErr) {
+        logger.error('Error checking existing username:', checkErr.message)
+      } else if (existingUser) {
+        setErrors({ username: 'Username is already taken lol' })
+        setLoading(false)
+        return
+      }
+    } catch (err) {
+      logger.error('Unexpected error checking username:', err)
+    }
+
     // 1. Sign up with Supabase Auth
     const { data, error: authError } = await supabase.auth.signUp({
       email: trimmedEmail,
