@@ -1,7 +1,13 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
 import { ProductCard } from './ProductCard'
 import type { ProductWithSubmitter } from '@/types'
+import { useAuth } from '@/contexts/AuthContext'
+
+// Mock useAuth
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: vi.fn(),
+}))
 
 // Mock ProductImage
 vi.mock('./ProductImage', () => ({
@@ -27,6 +33,20 @@ const mockProduct = {
 } as ProductWithSubmitter
 
 describe('ProductCard Component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(useAuth).mockReturnValue({
+      user: { id: 'u-1' } as any,
+      session: null,
+      profile: null,
+      isLoading: false,
+      isAdmin: false,
+      signOut: vi.fn(),
+      refreshProfile: vi.fn(),
+      ensureSession: vi.fn(),
+    })
+  })
+
   it('renders product details correctly', () => {
     render(
       <ProductCard
@@ -162,5 +182,42 @@ describe('ProductCard Component', () => {
 
     expect(screen.getByText('Be the first to try!')).toBeInTheDocument()
     expect(screen.queryByText(/Added by/)).not.toBeInTheDocument()
+  })
+
+  it('renders share button when user is signed in', () => {
+    render(
+      <ProductCard
+        product={mockProduct}
+        userStatus={null}
+        onAddToList={vi.fn()}
+        onMarkAsTried={vi.fn()}
+      />
+    )
+
+    expect(screen.getByLabelText('Share product')).toBeInTheDocument()
+  })
+
+  it('does not render share button when user is signed out', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: null,
+      session: null,
+      profile: null,
+      isLoading: false,
+      isAdmin: false,
+      signOut: vi.fn(),
+      refreshProfile: vi.fn(),
+      ensureSession: vi.fn(),
+    })
+
+    render(
+      <ProductCard
+        product={mockProduct}
+        userStatus={null}
+        onAddToList={vi.fn()}
+        onMarkAsTried={vi.fn()}
+      />
+    )
+
+    expect(screen.queryByLabelText('Share product')).not.toBeInTheDocument()
   })
 })

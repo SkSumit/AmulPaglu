@@ -102,10 +102,13 @@ describe('Signup Page', () => {
       error: null,
     })
     
-    mockSupabaseClient.from.mockImplementationOnce((table) => {
+    mockSupabaseClient.from.mockImplementation((table) => {
       expect(table).toBe('profiles')
       return {
-        upsert: vi.fn().mockResolvedValue({ error: null })
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        upsert: vi.fn().mockResolvedValue({ error: null }),
       } as any
     })
 

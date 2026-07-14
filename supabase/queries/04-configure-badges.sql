@@ -2,13 +2,13 @@
 -- AMUL PAGLU — Badges Feature Migration
 -- Paste this entire file into your Supabase SQL Editor and run it.
 -- ============================================================
-
-
+ 
+ 
 -- ── 1. Add tried_count column to products ──────────────────
 ALTER TABLE products
   ADD COLUMN IF NOT EXISTS tried_count integer NOT NULL DEFAULT 0;
-
-
+ 
+ 
 -- ── 2. Create badges table ─────────────────────────────────
 CREATE TABLE IF NOT EXISTS badges (
   id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -19,25 +19,25 @@ CREATE TABLE IF NOT EXISTS badges (
   condition   jsonb       NOT NULL,
   created_at  timestamptz DEFAULT now()
 );
-
+ 
 -- RLS: readable by all authenticated, writable by admins only
 ALTER TABLE badges ENABLE ROW LEVEL SECURITY;
-
+ 
 DROP POLICY IF EXISTS "badges_select_authenticated" ON badges;
 DROP POLICY IF EXISTS "badges_select_all" ON badges;
 DROP POLICY IF EXISTS "badges_all_admin" ON badges;
-
+ 
 CREATE POLICY "badges_select_all"
   ON badges FOR SELECT
   USING (true);
-
+ 
 CREATE POLICY "badges_all_admin"
   ON badges FOR ALL
   TO authenticated
   USING   ( (SELECT is_admin FROM profiles WHERE id = auth.uid()) = true )
   WITH CHECK ( (SELECT is_admin FROM profiles WHERE id = auth.uid()) = true );
-
-
+ 
+ 
 -- ── 3. Create user_badges table ────────────────────────────
 CREATE TABLE IF NOT EXISTS user_badges (
   id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -47,28 +47,28 @@ CREATE TABLE IF NOT EXISTS user_badges (
   is_notified boolean     NOT NULL DEFAULT false,
   UNIQUE (user_id, badge_slug)
 );
-
+ 
 ALTER TABLE user_badges
   ADD COLUMN IF NOT EXISTS is_notified boolean NOT NULL DEFAULT false;
-
+ 
 -- RLS: users read own; admins read all; inserts only via DB function
 ALTER TABLE user_badges ENABLE ROW LEVEL SECURITY;
-
+ 
 DROP POLICY IF EXISTS "user_badges_select_own" ON user_badges;
 DROP POLICY IF EXISTS "user_badges_select_all" ON user_badges;
 DROP POLICY IF EXISTS "user_badges_no_direct_write" ON user_badges;
-
+ 
 CREATE POLICY "user_badges_select_all"
   ON user_badges FOR SELECT
   USING (true);
-
+ 
 -- No direct INSERT/UPDATE/DELETE from client — only via SECURITY DEFINER function
 CREATE POLICY "user_badges_no_direct_write"
   ON user_badges FOR INSERT
   TO authenticated
   WITH CHECK (false);
-
-
+ 
+ 
 -- ── 4. Trigger: keep products.tried_count in sync ──────────
 CREATE OR REPLACE FUNCTION update_tried_count()
 RETURNS trigger AS $$
@@ -91,13 +91,13 @@ BEGIN
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
+ 
 DROP TRIGGER IF EXISTS trg_update_tried_count ON user_products;
 CREATE TRIGGER trg_update_tried_count
   AFTER INSERT OR UPDATE OR DELETE ON user_products
   FOR EACH ROW EXECUTE FUNCTION update_tried_count();
-
-
+ 
+ 
 -- ── 5. Function: check_and_award_badges (dynamic) ──────────
 -- Reads badge conditions from the badges table at runtime.
 -- Returns newly awarded badges so the client can show toasts.
@@ -122,19 +122,19 @@ BEGIN
     ) THEN
       CONTINUE;
     END IF;
-
+ 
     c             := b.condition;
     condition_met := false;
-
+ 
     CASE c->>'type'
-
+ 
       -- Total tried products
       WHEN 'tried_count' THEN
         SELECT COUNT(*) INTO v_count
           FROM user_products
          WHERE user_id = p_user_id AND status = 'tried';
         condition_met := v_count >= (c->>'minimum_count')::integer;
-
+ 
       -- Tried N products in a specific category
       WHEN 'category_tried_count' THEN
         SELECT COUNT(*) INTO v_count
@@ -144,13 +144,13 @@ BEGIN
            AND up.status = 'tried'
            AND p.category = c->>'category';
         condition_met := v_count >= (c->>'minimum_count')::integer;
-
+ 
       -- Tried ALL approved products in a category
       WHEN 'category_complete' THEN
         SELECT COUNT(*) INTO v_total
           FROM products
          WHERE category = c->>'category' AND status = 'approved';
-
+ 
         SELECT COUNT(*) INTO v_count
           FROM user_products up
           JOIN products p ON p.id = up.product_id
@@ -158,9 +158,9 @@ BEGIN
            AND up.status = 'tried'
            AND p.category = c->>'category'
            AND p.status = 'approved';
-
+ 
         condition_met := v_total > 0 AND v_count >= v_total;
-
+ 
       -- Tried N products with points >= minimum_points
       WHEN 'rarity_tried_count' THEN
         SELECT COUNT(*) INTO v_count
@@ -170,14 +170,14 @@ BEGIN
            AND up.status = 'tried'
            AND COALESCE(p.points, 0) >= (c->>'minimum_points')::integer;
         condition_met := v_count >= (c->>'minimum_count')::integer;
-
+ 
       -- At least N approved suggestions
       WHEN 'suggestion_approved' THEN
         SELECT COUNT(*) INTO v_count
           FROM suggestions
          WHERE submitted_by = p_user_id AND status = 'approved';
         condition_met := v_count >= COALESCE((c->>'minimum_count')::integer, 1);
-
+ 
       -- Early adopter check: one of the first N users to sign up
       WHEN 'early_adopter' THEN
         SELECT created_at INTO v_profile_created_at
@@ -186,22 +186,22 @@ BEGIN
           FROM profiles
          WHERE created_at <= v_profile_created_at;
         condition_met := v_count <= COALESCE((c->>'minimum_count')::integer, 50);
-
+ 
       -- Tried ALL approved products total (dynamic)
       WHEN 'all_complete' THEN
         SELECT COUNT(*) INTO v_total
           FROM products
          WHERE status = 'approved';
-
+ 
         SELECT COUNT(*) INTO v_count
           FROM user_products up
           JOIN products p ON p.id = up.product_id
          WHERE up.user_id = p_user_id
            AND up.status = 'tried'
            AND p.status = 'approved';
-
+ 
         condition_met := v_total > 0 AND v_count >= v_total;
-
+ 
       -- Tried a specific product by product name filter
       WHEN 'product_tried' THEN
         SELECT COUNT(*) INTO v_count
@@ -211,16 +211,16 @@ BEGIN
            AND up.status = 'tried'
            AND p.name ILIKE c->>'product_name';
         condition_met := v_count >= 1;
-
+ 
       ELSE
         condition_met := false;
     END CASE;
-
+ 
     IF condition_met THEN
       BEGIN
         INSERT INTO user_badges (user_id, badge_slug)
           VALUES (p_user_id, b.slug);
-
+ 
         new_slug := b.slug;
         new_name := b.name;
         new_icon := b.icon;
@@ -233,8 +233,8 @@ BEGIN
   END LOOP;
 END;
 $$;
-
-
+ 
+ 
 -- ── 5.5 Function: get_and_clear_new_badges (notification wrapper)
 CREATE OR REPLACE FUNCTION get_and_clear_new_badges(p_user_id uuid)
 RETURNS TABLE(new_slug text, new_name text, new_icon text, new_description text)
@@ -244,7 +244,7 @@ AS $$
 BEGIN
   -- Run badge evaluation triggers first to award any new badges
   PERFORM check_and_award_badges(p_user_id);
-
+ 
   -- Retrieve and mark as notified all unnotified user badges
   RETURN QUERY
   WITH updated_badges AS (
@@ -258,8 +258,8 @@ BEGIN
     JOIN updated_badges ub ON ub.badge_slug = b.slug;
 END;
 $$;
-
-
+ 
+ 
 -- ── 6. Trigger: auto-check badges on user_products changes ─
 CREATE OR REPLACE FUNCTION trigger_check_badges()
 RETURNS trigger AS $$
@@ -282,13 +282,13 @@ BEGIN
   RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
+ 
 DROP TRIGGER IF EXISTS trg_check_badges_on_try ON user_products;
 CREATE TRIGGER trg_check_badges_on_try
   AFTER INSERT OR UPDATE OR DELETE ON user_products
   FOR EACH ROW EXECUTE FUNCTION trigger_check_badges();
-
-
+ 
+ 
 -- ── 7. Also call badge check when suggestion is approved ───
 CREATE OR REPLACE FUNCTION trigger_check_badges_on_suggestion()
 RETURNS trigger AS $$
@@ -303,13 +303,13 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
+ 
 DROP TRIGGER IF EXISTS trg_check_badges_on_suggestion ON suggestions;
 CREATE TRIGGER trg_check_badges_on_suggestion
   AFTER UPDATE ON suggestions
   FOR EACH ROW EXECUTE FUNCTION trigger_check_badges_on_suggestion();
-
-
+ 
+ 
 -- ── 8. Seed default badges ─────────────────────────────────
 INSERT INTO badges (slug, name, description, icon, condition) VALUES
   ('first_drop',               'Calf Steps',                'Marked your very first Amul product as tried.',                                                 '🍼', '{"type":"tried_count","minimum_count":1}'),
@@ -347,8 +347,8 @@ ON CONFLICT (slug) DO UPDATE SET
   description = EXCLUDED.description,
   icon = EXCLUDED.icon,
   condition = EXCLUDED.condition;
-
-
+ 
+ 
 -- ── 9. Function: revoke_unearned_badges ───────────────────
 -- Removes badges a user no longer qualifies for.
 -- Called from the client after an "un-try" action.
@@ -373,19 +373,19 @@ BEGIN
   LOOP
     c             := b.condition;
     condition_met := false;
-
+ 
     CASE c->>'type'
       WHEN 'tried_count' THEN
         SELECT COUNT(*) INTO v_count FROM user_products
          WHERE user_id = p_user_id AND status = 'tried';
         condition_met := v_count >= (c->>'minimum_count')::integer;
-
+ 
       WHEN 'category_tried_count' THEN
         SELECT COUNT(*) INTO v_count
           FROM user_products up JOIN products p ON p.id = up.product_id
          WHERE up.user_id = p_user_id AND up.status = 'tried' AND p.category = c->>'category';
         condition_met := v_count >= (c->>'minimum_count')::integer;
-
+ 
       WHEN 'category_complete' THEN
         SELECT COUNT(*) INTO v_total FROM products
          WHERE category = c->>'category' AND status = 'approved';
@@ -394,24 +394,24 @@ BEGIN
          WHERE up.user_id = p_user_id AND up.status = 'tried'
            AND p.category = c->>'category' AND p.status = 'approved';
         condition_met := v_total > 0 AND v_count >= v_total;
-
+ 
       WHEN 'rarity_tried_count' THEN
         SELECT COUNT(*) INTO v_count
           FROM user_products up JOIN products p ON p.id = up.product_id
          WHERE up.user_id = p_user_id AND up.status = 'tried'
            AND COALESCE(p.points, 0) >= (c->>'minimum_points')::integer;
         condition_met := v_count >= (c->>'minimum_count')::integer;
-
+ 
       WHEN 'suggestion_approved' THEN
         SELECT COUNT(*) INTO v_count FROM suggestions
          WHERE submitted_by = p_user_id AND status = 'approved';
         condition_met := v_count >= COALESCE((c->>'minimum_count')::integer, 1);
-
+ 
       WHEN 'early_adopter' THEN
         SELECT created_at INTO v_profile_created_at FROM profiles WHERE id = p_user_id;
         SELECT COUNT(*) INTO v_count FROM profiles WHERE created_at <= v_profile_created_at;
         condition_met := v_count <= COALESCE((c->>'minimum_count')::integer, 50);
-
+ 
       WHEN 'all_complete' THEN
         SELECT COUNT(*) INTO v_total FROM products
          WHERE status = 'approved';
@@ -420,18 +420,18 @@ BEGIN
          WHERE up.user_id = p_user_id AND up.status = 'tried'
            AND p.status = 'approved';
         condition_met := v_total > 0 AND v_count >= v_total;
-
+ 
       WHEN 'product_tried' THEN
         SELECT COUNT(*) INTO v_count
           FROM user_products up JOIN products p ON p.id = up.product_id
          WHERE up.user_id = p_user_id AND up.status = 'tried'
            AND p.name ILIKE c->>'product_name';
         condition_met := v_count >= 1;
-
+ 
       ELSE
         condition_met := true; -- Unknown condition — don't revoke
     END CASE;
-
+ 
     -- Revoke if condition is no longer met
     IF NOT condition_met THEN
       DELETE FROM user_badges

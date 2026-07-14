@@ -112,8 +112,10 @@ describe('Explore Page', () => {
       await userEvent.type(searchInput, 'Chocolate')
     })
 
-    expect(screen.getByText('Amul Dark Chocolate')).toBeInTheDocument()
-    expect(screen.queryByText('Amul Butter')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Amul Dark Chocolate')).toBeInTheDocument()
+      expect(screen.queryByText('Amul Butter')).not.toBeInTheDocument()
+    })
   })
 
   it('supports optimistic user status updates: adding to list', async () => {

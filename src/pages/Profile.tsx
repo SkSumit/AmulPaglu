@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Trophy, CheckCircle2, Share2, BookmarkCheck } from 'lucide-react'
+import { Trophy, CheckCircle2, Share2, BookmarkCheck, Star } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTier } from '@/types'
@@ -199,17 +199,43 @@ export default function ProfilePage() {
         </div>
 
         {/* Stats row */}
-        <div className="flex gap-6 text-center">
+        <div className="flex flex-wrap justify-center gap-3 sm:justify-start w-full sm:w-auto">
           {[
-            { label: 'Points', value: loading ? '…' : pts.toString(), icon: '⭐' },
-            { label: 'Tried', value: loading ? '…' : tried.length.toString(), icon: '✅' },
-            { label: 'Want to try', value: loading ? '…' : wantCount.toString(), icon: '📌' },
-          ].map(({ label, value, icon }) => (
-            <div key={label}>
-              <p className="font-display text-xl font-bold text-[hsl(var(--foreground))]">
-                {icon} {value}
+            {
+              label: 'Points',
+              value: loading ? '…' : pts.toString(),
+              icon: <Star size={14} className="text-amber-500 fill-amber-500 shrink-0" />,
+              bg: 'bg-amber-500/5 border-amber-500/10 text-amber-700 dark:text-amber-400 dark:bg-amber-500/10',
+            },
+            {
+              label: 'Tried',
+              value: loading ? '…' : tried.length.toString(),
+              icon: <CheckCircle2 size={14} className="text-green-500 shrink-0" />,
+              bg: 'bg-green-500/5 border-green-500/10 text-green-700 dark:text-green-400 dark:bg-green-500/10',
+            },
+            {
+              label: 'Want to try',
+              value: loading ? '…' : wantCount.toString(),
+              icon: <BookmarkCheck size={14} className="text-blue-500 shrink-0" />,
+              bg: 'bg-blue-500/5 border-blue-500/10 text-blue-700 dark:text-blue-400 dark:bg-blue-500/10',
+            },
+          ].map(({ label, value, icon, bg }) => (
+            <div
+              key={label}
+              className={cn(
+                "flex flex-col items-center justify-center min-w-[90px] px-3.5 py-2 rounded-2xl border shadow-sm transition-all hover:scale-[1.03] hover:shadow-md",
+                bg
+              )}
+            >
+              <div className="flex items-center gap-1.5 mb-0.5">
+                {icon}
+                <span className="font-display text-lg font-black text-[hsl(var(--foreground))] leading-none">
+                  {value}
+                </span>
+              </div>
+              <p className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-wider leading-none">
+                {label}
               </p>
-              <p className="text-[10px] text-[hsl(var(--muted-foreground))]">{label}</p>
             </div>
           ))}
         </div>
@@ -247,7 +273,7 @@ export default function ProfilePage() {
             return (
               <div
                 key={i}
-                className="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3 shadow-card"
+                className="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3 shadow-card min-w-0"
               >
                 {/* Image / fallback */}
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[hsl(var(--muted))]">
@@ -260,7 +286,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-[hsl(var(--foreground))]">{displayName}</p>
-                  <div className="mt-0.5 flex items-center gap-1.5">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                     {product?.rarity_label && (
                       <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-medium', RARITY_PILL[product.rarity_label] ?? '')}>
                         {product.rarity_label}

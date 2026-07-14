@@ -54,11 +54,20 @@ export default function Explore() {
     const params = new URLSearchParams(window.location.search)
     return params.get('search') || ''
   })
+  const [debouncedSearch,     setDebouncedSearch]     = useState(search)
   const [filterCategory,      setFilterCategory]      = useState('')
   const [filterRarity,        setFilterRarity]        = useState('')
   const [filterStatus,        setFilterStatus]        = useState<StatusFilter>('all')
   const [sortBy,              setSortBy]              = useState<SortBy>('newest')
   const [filtersOpen,         setFiltersOpen]         = useState(false)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search)
+      setDisplayCount(PAGE_SIZE)
+    }, 300)
+    return () => clearTimeout(handler)
+  }, [search])
 
   // ── Load data ──────────────────────────────────────────
   useEffect(() => {
@@ -138,8 +147,8 @@ export default function Explore() {
   const filtered = useMemo(() => {
     let list = [...products]
 
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.trim().toLowerCase()
       list = list.filter((p) => getDisplayProductName(p.name).toLowerCase().includes(q))
     }
     if (filterCategory)     list = list.filter((p) => p.category     === filterCategory)
@@ -157,7 +166,7 @@ export default function Explore() {
     else if (sortBy === 'name_asc') list.sort((a, b) => getDisplayProductName(a.name).localeCompare(getDisplayProductName(b.name)))
 
     return list
-  }, [products, userProductMap, search, filterCategory, filterRarity, filterStatus, sortBy])
+  }, [products, userProductMap, debouncedSearch, filterCategory, filterRarity, filterStatus, sortBy])
 
   const displayed = filtered.slice(0, displayCount)
   const activeFilterCount = [filterCategory, filterRarity]
@@ -336,7 +345,7 @@ export default function Explore() {
         </div>
         <div className="flex items-center gap-2">
           {/* Grid/List toggle buttons */}
-          <div className="flex rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-0.5 shrink-0">
+          <div className="hidden sm:flex rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-0.5 shrink-0">
             <button
               onClick={() => setViewMode('grid')}
               className={cn(
@@ -366,7 +375,7 @@ export default function Explore() {
           <button
             onClick={() => setFiltersOpen((v) => !v)}
             className={cn(
-              'flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors',
+              'hidden sm:flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors',
               filtersOpen || activeFilterCount > 0
                 ? 'border-amul-red bg-amul-red/5 text-amul-red'
                 : 'border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]'
@@ -432,24 +441,73 @@ export default function Explore() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
-        <input
-          type="search"
-          placeholder="Search products…"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setDisplayCount(PAGE_SIZE) }}
-          className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] py-2.5 pl-10 pr-4 text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] outline-none transition-colors focus:border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--border))]/40"
-        />
-        {search && (
+      {/* Search & Mobile Filters Row */}
+      <div className="flex gap-2 mb-4">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
+          <input
+            type="search"
+            placeholder="Search products…"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setDisplayCount(PAGE_SIZE) }}
+            className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] py-2.5 pl-10 pr-4 text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] outline-none transition-colors focus:border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--border))]/40"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Mobile Filters Button */}
+        <button
+          onClick={() => setFiltersOpen((v) => !v)}
+          className={cn(
+            'flex sm:hidden items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-colors shrink-0',
+            filtersOpen || activeFilterCount > 0
+              ? 'border-amul-red bg-amul-red/5 text-amul-red'
+              : 'border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]'
+          )}
+        >
+          <SlidersHorizontal size={15} />
+          Filters
+          {activeFilterCount > 0 && (
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amul-red text-[10px] font-bold text-white">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+
+        {/* Mobile View Mode Toggle */}
+        <div className="flex sm:hidden rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-0.5 shrink-0 items-center">
           <button
-            onClick={() => setSearch('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+            onClick={() => setViewMode('grid')}
+            className={cn(
+              'rounded-lg p-1.5 transition-colors',
+              viewMode === 'grid'
+                ? 'bg-[hsl(var(--muted))] text-[hsl(var(--foreground))]'
+                : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+            )}
+            title="Grid view"
           >
-            <X size={14} />
+            <LayoutGrid size={15} />
           </button>
-        )}
+          <button
+            onClick={() => setViewMode('list')}
+            className={cn(
+              'rounded-lg p-1.5 transition-colors',
+              viewMode === 'list'
+                ? 'bg-[hsl(var(--muted))] text-[hsl(var(--foreground))]'
+                : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+            )}
+            title="List view"
+          >
+            <List size={15} />
+          </button>
+        </div>
       </div>
 
       {/* Filter panel */}

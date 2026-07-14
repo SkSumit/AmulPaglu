@@ -65,4 +65,3 @@ create index if not exists idx_user_products_user on public.user_products(user_i
 create index if not exists idx_user_products_product on public.user_products(product_id);
 create index if not exists idx_suggestions_status on public.suggestions(status);
 create index if not exists idx_suggestions_submitted_by on public.suggestions(submitted_by);
- 

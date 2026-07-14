@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import type { Badge } from '@/types'
 import { useToast, ToastContainer } from '@/components/ui/Toast'
 import { shareContent, getBadgeShareData } from '@/lib/share'
+import { useAuth } from '@/contexts/AuthContext'
 
 // ── Badge Card ─────────────────────────────────────────────
 interface BadgeCardProps {
@@ -48,6 +49,7 @@ interface BadgeModalProps {
 }
 
 function BadgeModal({ badge, earned, earnedAt, onClose }: BadgeModalProps) {
+  const { user } = useAuth()
   const { toasts, addToast, dismiss } = useToast()
 
   function handleShareBadge() {
@@ -110,7 +112,7 @@ function BadgeModal({ badge, earned, earnedAt, onClose }: BadgeModalProps) {
           <p className="mt-3 rounded-xl bg-[hsl(var(--muted))]/50 px-3 py-2 text-center text-xs text-[hsl(var(--muted-foreground))]">
             Keep exploring to unlock this badge!
           </p>
-        ) : (
+        ) : user ? (
           <button
             onClick={handleShareBadge}
             className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-amul-red px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-amul-red-dark"
@@ -118,7 +120,7 @@ function BadgeModal({ badge, earned, earnedAt, onClose }: BadgeModalProps) {
             <Share2 size={13} />
             Share Achievement
           </button>
-        )}
+        ) : null}
       </div>
       <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
